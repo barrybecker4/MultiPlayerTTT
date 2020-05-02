@@ -1,0 +1,30 @@
+<script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+<!--script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script-->
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+
+<script>
+
+  // The localized messages for the user's selected locale. Initialized on LandingPage.
+  var messageBundle;
+
+  /**
+   * Retrieve the messages for the user's selected locale to the client
+   * @param locale (optional) the locale to retrieve. If not specified, then get users default locale.
+   */
+  function retrieveMessages(locale) {
+    google.script.run
+        .withSuccessHandler(localizePage)
+        .withFailureHandler(showError)
+        .getMessagesForLocale(locale);
+  }
+
+  /**
+   * Logs an error message and shows an alert to the user.
+   */
+  function showError(error) {
+    console.log(error);
+    window.alert('Error: ' + error);
+  }
+
+</script>

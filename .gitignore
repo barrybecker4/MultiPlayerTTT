@@ -1,0 +1,10 @@
+*.class
+appscript.json
+
+# Package Files #
+*.jar
+*.war
+*.ear
+/.idea/
+/TTTApp/.settings/
+
