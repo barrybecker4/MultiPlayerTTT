@@ -9,25 +9,28 @@
 </head>
 <body>
 
-<!--
- * The entry point for Online TTT web application.
--->
+    <!--
+     * The entry point for Online TTT web application.
+    -->
 
-<div class="header">
-    <span id="userid" class="smallText"><?=getUserId()?></span>
-</div>
+    <div class="header">
+        <span id="userid" class="smallText"><?=getUserId()?></span>
+    </div>
 
-<div id="title" class="title">Online Tic-Tac-Toe</div>
-<div id="instructions" class="text"></div>
-<div id="main-div">
-    <div id="intro-question" class="text">Waiting for opponent...</div>
-</div>
+    <div id="title" class="title">Online Tic-Tac-Toe</div>
+    <div id="instructions" class="text"></div>
+    <div id="main-div">
+        <div id="intro-question" class="text">Waiting for opponent...</div>
+    </div>
+    <input type="button" id="exitButton" value="Exit"/>
 
-<br>
-<div class="text">Active Players:</div>
-<div class="text">
-    <ul id="players"></ul>
-</div>
+    <br>
+    <div class="text">Active Players:</div>
+    <div class="text">
+        <ul id="players">
+            <li>retrieving list...</li>
+        </ul>
+    </div>
 </body>
 </html>
 

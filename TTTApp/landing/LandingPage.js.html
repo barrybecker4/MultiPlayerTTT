@@ -7,6 +7,12 @@
      initialize();
    };
 
+   window.onbeforeunload = function () {
+     // TODO: get this to work. For now use Exit button.
+     leaving();
+     return null;
+   };
+
   function initialize() {
       // Read from gameTables and show the current people in the room.
       // Create a timer so this updates every few seconds/
@@ -15,6 +21,10 @@
         .withSuccessHandler(populatePlayersList)
         .withFailureHandler(showError)
         .getPlayers();
+
+      document.querySelector("#exitButton").addEventListener("click", function(){
+          leaving();
+      });
 
       // get the current list of available players (there will be either 1 or 0)
       // If 1, then start the game immediately and remove that 1 player from the available players table
@@ -35,6 +45,17 @@
       playerLi.textContent = players[i];
       container.appendChild(playerLi);
     }
+  }
+
+  function leaving() {
+      google.script.run
+        .withSuccessHandler(playerRemoved)
+        .withFailureHandler(showError)
+        .removePlayer();
+  }
+
+  function playerRemoved() {
+    alert("removed user");
   }
 
 </script>
