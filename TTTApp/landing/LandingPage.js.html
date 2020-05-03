@@ -3,72 +3,38 @@
   /**
    * Run initializations on page load.
    */
-  $(function() {
-    initialize();
-  });
+   window.onload = function() {
+     initialize();
+   };
 
   function initialize() {
-    google.script.run
-        .withSuccessHandler(authentication)
-        .withFailureHandler(showError)
-        .isValidUser();
-    google.script.run
-        .withSuccessHandler(populateLanguageDropList)
-        .withFailureHandler(showError)
-        .getSupportedLocales();
+      // Read from gameTables and show the current people in the room.
+      // Create a timer so this updates every few seconds/
 
-    $("#main-div").hide();
-    $('#languageSelector select').bind('change', localeChangedHandler);
-    retrieveMessages();
-  }
+      google.script.run
+        .withSuccessHandler(populatePlayersList)
+        .withFailureHandler(showError)
+        .getPlayers();
 
-  function authentication(validUser) {
-    if (validUser) {
-      $("#main-div").show();
-    }
-    else {
-      $("#userid")
-        .addClass("warning")
-        .text(messageBundle["INVALID_USER_WARNING"]); // must have domain, config.domain
-    }
+      // get the current list of available players (there will be either 1 or 0)
+      // If 1, then start the game immediately and remove that 1 player from the available players table
+      // else if 0, wait for opponent
+
+      // Once we have 2 players the game starts
   }
 
   /**
    * @param supportedLocales an array of supported languages based on what is in the configured messages sheet.
    */
-  function populateLanguageDropList(supportedLocales) {
-    var select = $("#languageSelector select");
-    select.empty();
-    for (var i = 0; i < supportedLocales.length; i++) {
-      var locale = supportedLocales[i];
-      var option = $('<option>')
-          .attr('value', locale.value)
-          .attr('selected', locale.selected)
-          .text(locale.label);
-      select.append(option);
+  function populatePlayersList(players) {
+    const container = document.querySelector("#players");
+    removeChildren(container);
+
+    for (var i = 0; i < players.length; i++) {
+      const playerLi = document.createElement("li");
+      playerLi.textContent = players[i];
+      container.appendChild(playerLi);
     }
   }
 
-  function selectedLocale() {
-    return $("#languageSelector select").val();
-  }
-
-  function localeChangedHandler(locale) {
-    retrieveMessages(selectedLocale());
-  }
-
-  function localizePage(mBundle) {
-    messageBundle = mBundle;
-    $("#languageSelector span").text(mBundle["LANGUAGE"] + ":");
-
-    $("#title").text(mBundle["APP_TITLE"]);
-    $("#instructions").text(mBundle["APP_INSTRUCTIONS"]);
-    $("#intro-question").text(mBundle["DO_YOU_WANT_TO"]);
-    $("#be-tutor").text(mBundle["BE_TUTOR"]);
-    $("#be-tutee").text(mBundle["BE_TUTORED"]);
-    $("#tutoring-completed span").text(mBundle["TUTOR_FEEDBACK_LEAD"]);
-    $("#tutoring-completed a").text(mBundle["TUTOR_FEEDBACK_LINK"]);
-    $("#tutee-completed span").text(mBundle["TUTEE_FEEDBACK_LEAD"]);
-    $("#tutee-completed a").text(mBundle["TUTEE_FEEDBACK_LINK"]);
-  }
 </script>

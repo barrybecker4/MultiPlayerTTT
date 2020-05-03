@@ -1,5 +1,6 @@
 *.class
 appscript.json
+.clasp.json
 
 # Package Files #
 *.jar
