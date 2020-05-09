@@ -1,6 +1,6 @@
 Online Tic-Tac-toe
 ==========
-An experiment in using GAS (Google App Script) to create a massively multiplayer game. For now the game is simply tic-tac-toe, but this example could provide a framework for more sophisticated multiplayer games. 
+An experiment in using GAS (Google App Script) to create a massively multiplayer game. For now the game is simply [tic-tac-toe](https://script.google.com/macros/s/AKfycby74AfChopjPSvKiu0VCIECjsyhwcGyErXtkr0R28wY/dev), but this example could provide a framework for more sophisticated multiplayer games. 
  
 ## How to Run and Contribute
 This is a Google App Script (GAS) application. 

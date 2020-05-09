@@ -8,7 +8,7 @@
  * Do not access this variable directly. Instead use getConfig().
  */
 //PropertiesService.getScriptProperties()
-//                 .setProperty("CONFIG_SHEET_ID", "1h25o3HBjIeEAkeMdysz2Qd5V2xIbIsXmZioos8XM4ps"); //<your config spreadsheet id here>);
+//                 .setProperty("CONFIG_SHEET_ID", <your config spreadsheet id here>);
 var config;
 
 /**
