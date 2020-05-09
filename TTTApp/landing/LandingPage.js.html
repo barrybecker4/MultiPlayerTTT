@@ -8,33 +8,42 @@
    };
 
    window.onbeforeunload = function () {
-     // TODO: get this to work. For now use Exit button.
-     leaving();
-     return null;
+     return "are you sure you want to leave?";
    };
 
-  function initialize() {
-      // Read from gameTables and show the current people in the room.
-      // Create a timer so this updates every few seconds/
 
-      google.script.run
+   function initialize() {
+     initializeButtons();
+     continuouslyShowCurrentPlayers();
+  }
+
+  function initializeButtons() {
+
+    getPlayButton().addEventListener("click", function(){
+       enterGame();
+     });
+
+    const quitButton = getQuitButton();
+    quitButton.disabled = true;
+    quitButton.addEventListener("click", function(){
+      leaveGame();
+    });
+  }
+
+  function continuouslyShowCurrentPlayers() {
+      showCurrentPlayers();
+      setTimeout(continuouslyShowCurrentPlayers, 1000);
+  }
+
+  function showCurrentPlayers() {
+    google.script.run
         .withSuccessHandler(populatePlayersList)
         .withFailureHandler(showError)
         .getPlayers();
-
-      document.querySelector("#exitButton").addEventListener("click", function(){
-          leaving();
-      });
-
-      // get the current list of available players (there will be either 1 or 0)
-      // If 1, then start the game immediately and remove that 1 player from the available players table
-      // else if 0, wait for opponent
-
-      // Once we have 2 players the game starts
   }
 
   /**
-   * @param supportedLocales an array of supported languages based on what is in the configured messages sheet.
+   * @param players list of currently available or active players.
    */
   function populatePlayersList(players) {
     const container = document.querySelector("#players");
@@ -47,15 +56,37 @@
     }
   }
 
-  function leaving() {
+  function enterGame() {
       google.script.run
-        .withSuccessHandler(playerRemoved)
+        .withSuccessHandler(populatePlayersList)
         .withFailureHandler(showError)
-        .removePlayer();
+        .enterCurrentPlayer();
+
+      getPlayButton().disabled = true;
+      getQuitButton().disabled = false;
+
+      // get the current list of available players (there will be either 1 or 0)
+      // If 1, then start the game immediately and remove that 1 player from the available players table
+      // else if 0, wait for opponent
+
+      // Once we have 2 players the game starts
   }
 
-  function playerRemoved() {
-    alert("removed user");
+  function leaveGame() {
+      google.script.run
+        .withFailureHandler(showError)
+        .removePlayer();
+
+      getPlayButton().disabled = false;
+      getQuitButton().disabled = true;
+  }
+
+  function getPlayButton() {
+    return document.querySelector("#play");
+  }
+
+  function getQuitButton() {
+    return document.querySelector("#quit");
   }
 
 </script>

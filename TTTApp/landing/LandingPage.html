@@ -9,28 +9,32 @@
 </head>
 <body>
 
-    <!--
-     * The entry point for Online TTT web application.
-    -->
-
     <div class="header">
         <span id="userid" class="smallText"><?=getUserId()?></span>
     </div>
 
     <div id="title" class="title">Online Tic-Tac-Toe</div>
-    <div id="instructions" class="text"></div>
-    <div id="main-div">
-        <div id="intro-question" class="text">Waiting for opponent...</div>
-    </div>
-    <input type="button" id="exitButton" value="Exit"/>
+    <div id="instructions" class="text">
+        Play Tic-Tac-Toe with other people online. Click play to start.
+        If someone else is online and looking for a game you will automatically be matched with them.
+        You need to make moves withing 10 seconds or forfeit.</div>
 
+    <div id="main-div">
+        <div>
+            <button id="play" class="text">Play</button>
+            <button id="quit" class="text">Quit</button>
+        </div>
+        <div id="directions" class="text">Waiting for opponent...</div>
+    </div>
+    <div id="board"></div>
     <br>
-    <div class="text">Active Players:</div>
     <div class="text">
-        <ul id="players">
+        <div>Active Players:</div>
+        <ul id="players" class="text">
             <li>retrieving list...</li>
         </ul>
     </div>
+
 </body>
 </html>
 
