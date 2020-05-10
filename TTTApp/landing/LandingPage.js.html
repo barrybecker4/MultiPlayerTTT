@@ -4,23 +4,23 @@
    * Run initializations on page load.
    */
    window.onload = function() {
-     initialize();
+       initialize();
    };
 
    window.onbeforeunload = function () {
-     return "are you sure you want to leave?";
+       return "are you sure you want to leave?";
    };
 
    function initialize() {
-     initializeButtons();
-     continuouslyShowAllPlayers();
-  }
+       initializeButtons();
+       continuouslyShowAllPlayers();
+   }
 
   function initializeButtons() {
 
     getPlayButton().addEventListener("click", function(){
        enterGame();
-     });
+    });
 
     const quitButton = getQuitButton();
     quitButton.disabled = true;
@@ -31,7 +31,7 @@
 
   function continuouslyShowAllPlayers() {
       showAllPlayers();
-      setTimeout(continuouslyShowAllPlayers, 100);
+      setTimeout(continuouslyShowAllPlayers, 1000);
   }
 
   function showAllPlayers() {
@@ -44,31 +44,26 @@
   /**
    * @param players list of currently available or active players.
    */
-  function populatePlayerPairsList(players) {
-    const container = document.querySelector("#players");
-    removeChildren(container);
+  function populatePlayerPairsList(playerPairs) {
+      var container = document.querySelector("#players");
+      removeChildren(container);
 
-    for (var i = 0; i < players.length; i++) {
-      const playerLi = document.createElement("li");
-      playerLi.textContent = players[i];
-      container.appendChild(playerLi);
-    }
+      for (var i = 0; i < playerPairs.length; i++) {
+          const playerLi = document.createElement("li");
+          var ppair = playerPairs[i]
+          playerLi.textContent = ppair[0] + " vs " + ppair[1];
+          container.appendChild(playerLi);
+      }
   }
 
   function enterGame() {
-
       google.script.run
+        .withSuccessHandler(waitForOpponent)
         .withFailureHandler(showError)
         .newPlayerEnters();
 
       getPlayButton().disabled = true;
       getQuitButton().disabled = false;
-
-      // get the current list of available players (there will be either 1 or 0)
-      // If 1, then start the game immediately and remove that 1 player from the available players table
-      // else if 0, wait for opponent
-
-      // Once we have 2 players the game starts
   }
 
   function leaveGame() {
@@ -78,6 +73,35 @@
 
       getPlayButton().disabled = false;
       getQuitButton().disabled = true;
+  }
+
+  /**
+   * Either the other player has not yet entered, or we are the second player and should start game immediately.
+   */
+  function waitForOpponent(players) {
+      if (players.player2) {
+           gameStarted(players);
+      }
+      else {
+           //setTimeout(waitForOpponent, 500);
+           google.script.run
+              .withSuccessHandler(waitForOpponent)
+              .withFailureHandler(showError)
+              .checkForOpponent();
+      }
+  }
+
+  function gameStarted(players) {
+      var user = document.querySelector("#userid").textContent;
+      alert("players = " + JSON.stringify(players) + " user = " + user);
+      // If no second player for that last one, then no longer waiting
+      var directionsEl = document.querySelector("#directions");
+
+      var directions = players.player1 == user ?
+        "Found player for you to play. You will be playing X against " + players.player2 + "." :
+        "You will be playing O against " + players.player1 + ".";
+
+      directionsEl.textContent  = directions
   }
 
   function getPlayButton() {

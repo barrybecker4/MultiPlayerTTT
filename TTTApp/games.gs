@@ -39,17 +39,31 @@ function newPlayerEnters() {
 
   var user = getUserId();
   var players = getPlayersFromRow(lastRow);
+  var newPlayers;
 
   if (isThisPlayerAlreadyWaiting(user, players)) {
       Logger.log("Player " + user + " is already waiting for a game...");
+      newPlayers = { player1: user };
   }
   else if (isAnotherPlayerWaiting(user, players)) {
       playAsPlayer2(user, sheet);
+      newPlayers = { player1: players.player1, player2: user };
   }
   else if (noPlayersWaiting(players, lastRowNum)) {
-      createNewGame(user, lastRowNum, sheet)
+      createNewGame(user, lastRowNum, sheet);
+      newPlayers = { player1: user };
   }
   else throw new Error("Unexpected case");
+  return newPlayers;
+}
+
+function checkForOpponent() {
+    var sheet = getGamesSheet();
+    var data = getData(sheet);
+    // last row always blanks, so take the one before
+    var lastRowNum = data.length - 2;
+    var lastRow = data[lastRowNum];
+    return getPlayersFromRow(lastRow);
 }
 
 function isThisPlayerAlreadyWaiting(user, players) {
@@ -98,8 +112,8 @@ function getPairedPlayers() {
     var row = null;
     for (var i = 0; i < cellData.length - 1; i++) {
         row = cellData[i];
-        var str = row[getPlayer1Col()] + " vs " + row[getPlayer2Col()];
-        pairedPlayersList.push(str);
+        var pair = [row[getPlayer1Col()], row[getPlayer2Col()]];
+        pairedPlayersList.push(pair);
     }
 
     return pairedPlayersList;
