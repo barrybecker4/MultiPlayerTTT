@@ -4,6 +4,10 @@ function getGamesSheet() {
   return SpreadsheetApp.openById(id).getActiveSheet();
 }
 
+/**
+ * @return the data in the specified sheet, excluding the initial header row.
+ * Rows will be indexed starting at 0. The last row has all blank values.
+ */
 function getData(sheet) {
   return sheet.getSheetValues(2, 1, sheet.getLastRow(), sheet.getLastColumn());
 }
@@ -20,69 +24,87 @@ function getData(sheet) {
 function newPlayerEnters() {
   var sheet = getGamesSheet();
   var data = getData(sheet);
-  const lastRowNum = data.length - 1;
-  var lastRow = data[lastRowNum];
+  // last row always blanks, so take the one before
+  var lastRowNum = data.length - 2;
+  var lastRow = lastRowNum >= 0 ? data[lastRowNum] : null;
 
-  const user = getUserId();
+  var user = getUserId();
+  var players = getPlayersFromRow(lastRow);
 
-  if (isThisPlayerAlreadyWaiting(user, lastRow)) {
+  if (isThisPlayerAlreadyWaiting(user, players)) {
       Logger.log("Player " + user + " is already waiting for a game...");
   }
-  else if (isAnotherPlayerWaiting(user, lastRow)) {
+  else if (isAnotherPlayerWaiting(user, players)) {
       playAsPlayer2(user, sheet);
   }
-  else if (noPlayersWaiting(lastRow, lastRowNum)) {
+  else if (noPlayersWaiting(players, lastRowNum)) {
       createNewGame(user, lastRowNum, sheet)
   }
   else throw new Error("Unexpected case");
 }
 
-function isThisPlayerAlreadyWaiting(user, lastRow) {
-    Logger.log("p1 = " + lastRow[getPlayer1Col()] + " p2 = " + lastRow[getPlayer2Col()]);
-    return lastRow[getPlayer1Col()] == user && lastRow[getPlayer2Col()] == '';
+function isThisPlayerAlreadyWaiting(user, players) {
+    return players && players.player1 == user && !players.player2;
 }
 
-function isAnotherPlayerWaiting(user, lastRow) {
-    const player1 = lastRow[getPlayer1Col()];
-    return player1 != user && lastRow[getPlayer2Col()] == '';
+function isAnotherPlayerWaiting(user, players) {
+    return players && players.player1 && players.player1 != user && !players.player2;
 }
 
-function noPlayersWaiting(lastRow, lastRowNum) {
-    const player1 = lastRow[getPlayer1Col()];
-    const player2 = lastRow[getPlayer2Col()];
-    Logger.log("lastRowNum = " + lastRowNum + " p1 = " + player1 + " p2 = " + player2);
-    return firstRowAndEmpty(lastRow, lastRowNum) || (player1 != '' && player2 != '');
+function noPlayersWaiting(players, lastRowNum) {
+    var emptyTable = lastRowNum == -1 && !players;
+    return emptyTable || players && (players.player1 && players.player2);
 }
 
-function firstRowAndEmpty(lastRow, lastRowNum) {
-    return lastRowNum == 0 && lastRow[getPlayer1Col()] == '' && lastRow[getPlayer2Col()] == '';
+function getPlayersFromRow(row) {
+    return row ? { player1: row[getPlayer1Col()], player2: row[getPlayer2Col()] } : null;
 }
 
 function playAsPlayer2(user, sheet) {
-  const lastRow = sheet.getLastRow();
-  sheet.getRange(lastRow, getPlayer2Col()).setValue(user);
-  sheet.getRange(lastRow, getStatusCol()).setValue("X_WON");  // for now just consider that p1 won
+  var lastRow = sheet.getLastRow();
+  sheet.getRange(lastRow, getPlayer2Col() + 1).setValue(user);
+  sheet.getRange(lastRow, getStatusCol() + 1).setValue("X_WON");  // for now just consider that p1 won
 }
 
 function createNewGame(user, lastRowNum, sheet) {
-    const lastRow = sheet.getLastRow();
-    const rowToSet = firstRowAndEmpty(lastRow, lastRowNum) ? lastRow : lastRow + 1;
-    sheet.getRange(rowToSet, getPlayer1Col()).setValue(user);
+    var lastRow = sheet.getLastRow();
+    var players = getPlayersFromRow(lastRow);
+    sheet.getRange(lastRow + 1, getPlayer1Col() + 1).setValue(user);
+}
+
+
+/**
+ * Get all paired players. Just listing them from the table. This just for debugging
+ */
+function getPairedPlayers() {
+  var thePlayers = [];
+
+  var sheet = getGamesSheet();
+  var cellData = getData(sheet);
+  // Sheets.Spreadsheets.Values.get(spreadsheetId, range);
+
+  var row = null;
+  for (var i = 0; i < cellData.length - 1; i++) {
+      row = cellData[i];
+      thePlayers.push(row[1] + " vs " + row[2]);
+  }
+
+  return thePlayers;
 }
 
 
 function getPlayerIdCol() {
-  return 1;
+  return 0;
 }
 function getPlayer1Col() {
-  return 2;
+  return 1;
 }
 function getPlayer2Col() {
-  return 3;
+  return 2;
 }
 function getStatusCol() {
-  return 4;
+  return 3;
 }
 function getBoardCol() {
-  return 5;
+  return 4;
 }
