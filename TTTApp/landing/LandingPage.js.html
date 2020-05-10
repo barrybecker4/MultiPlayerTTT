@@ -57,6 +57,7 @@
   }
 
   function enterGame() {
+      document.querySelector("#directions").textContent = 'Waiting for oppoent...';
       google.script.run
         .withSuccessHandler(waitForOpponent)
         .withFailureHandler(showError)
@@ -73,6 +74,7 @@
 
       getPlayButton().disabled = false;
       getQuitButton().disabled = true;
+      document.querySelector("#directions").textContent = 'You forfeit!';
   }
 
   /**
