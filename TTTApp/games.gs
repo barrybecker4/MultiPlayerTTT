@@ -1,4 +1,13 @@
 
+var status = {
+    PENDING: 'PENDING',
+    ACTIVE: 'ACTIVE',
+    X_WIN: 'X_WIN',
+    O_WIN: 'O_WIN',
+    X_BY_RESIGN: 'X_BY_RESIGN',
+    O_BY_RESIGN: 'O_BY_RESIGN',
+}
+
 function getGamesSheet() {
   const id = getConfig().gamesSheet;
   return SpreadsheetApp.openById(id).getActiveSheet();
@@ -62,14 +71,18 @@ function getPlayersFromRow(row) {
 
 function playAsPlayer2(user, sheet) {
   var lastRow = sheet.getLastRow();
-  sheet.getRange(lastRow, getPlayer2Col() + 1).setValue(user);
-  sheet.getRange(lastRow, getStatusCol() + 1).setValue("X_WON");  // for now just consider that p1 won
+  var col = getPlayer2Col() + 1;
+
+  // the game is now officially started
+  sheet.getRange(lastRow, col, 1, 2)
+      .setValues([[user, status.ACTIVE]]);
 }
 
 function createNewGame(user, lastRowNum, sheet) {
     var lastRow = sheet.getLastRow();
     var players = getPlayersFromRow(lastRow);
-    sheet.getRange(lastRow + 1, getPlayer1Col() + 1).setValue(user);
+    sheet.getRange(lastRow + 1, getPlayer1Col() + 1, 1, 3)
+        .setValues([[user, '', status.PENDING]]);
 }
 
 /**
