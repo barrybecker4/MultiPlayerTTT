@@ -1,10 +1,6 @@
 
-function getGamesSheet() {
-  return SpreadsheetApp.openById(getConfig().gamesSheet).getActiveSheet();
-}
-
-function getData(sheet) {
-  return sheet.getSheetValues(2, 1, sheet.getLastRow(), getPlayerCol()); //sheet.getLastColumn());
+function getPlayersSheet() {
+  return SpreadsheetApp.openById(getConfig().playersSheet).getActiveSheet();
 }
 
 function getPlayerCol() {
@@ -15,7 +11,7 @@ function getPlayerCol() {
  * Add the current user to the list of players
  */
 function enterCurrentPlayer() {
-  var sheet = getGamesSheet();
+  var sheet = getPlayersSheet();
 
   // first remove them just in case there are already there
   removeCurrentPlayer(sheet);
@@ -35,7 +31,7 @@ function addPlayer(user, sheet) {
 function getPlayers() {
   const thePlayers = [];
 
-  var sheet = getGamesSheet();
+  var sheet = getPlayersSheet();
 
   const cellData = getData(sheet);
   // Sheets.Spreadsheets.Values.get(spreadsheetId, range);
@@ -50,7 +46,7 @@ function getPlayers() {
 }
 
 function removePlayer() {
-   var sheet = getGamesSheet();
+   var sheet = getPlayersSheet();
    removeCurrentPlayer(sheet);
 }
 

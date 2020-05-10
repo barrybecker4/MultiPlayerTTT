@@ -8,7 +8,7 @@
  * Do not access this variable directly. Instead use getConfig().
  */
 //PropertiesService.getScriptProperties()
-//                 .setProperty("CONFIG_SHEET_ID", <your config spreadsheet id here>);
+//                 .setProperty("CONFIG_SHEET_ID", "1h25o3HBjIeEAkeMdysz2Qd5V2xIbIsXmZioos8XM4ps");//<your config spreadsheet id here>);
 var config;
 
 /**
@@ -41,11 +41,10 @@ function createConfig(configSpreadSheetId) {
   Logger.log("config sheet ID = " + configSpreadSheetId);
 
   const sheet = SpreadsheetApp.openById(configSpreadSheetId).getActiveSheet();
-
   const cellData = sheet.getSheetValues(2, 1, sheet.getLastRow(), 2);
 
   for (var i=0; i < cellData.length; i++) {
-    const row = cellData[i];
+    var row = cellData[i];
     Logger.log("key=" + row[0] + " value="+ row[1]);
     // row[0] is the KEY and row[1] is the value
     cfg[row[0]] = row[1];

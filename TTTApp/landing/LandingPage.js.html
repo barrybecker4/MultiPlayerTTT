@@ -57,6 +57,11 @@
   }
 
   function enterGame() {
+
+      google.script.run
+        .withFailureHandler(showError)
+        .newPlayerEnters();
+
       google.script.run
         .withSuccessHandler(populatePlayersList)
         .withFailureHandler(showError)
