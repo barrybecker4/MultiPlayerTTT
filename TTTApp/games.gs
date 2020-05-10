@@ -72,26 +72,42 @@ function createNewGame(user, lastRowNum, sheet) {
     sheet.getRange(lastRow + 1, getPlayer1Col() + 1).setValue(user);
 }
 
-
 /**
  * Get all paired players. Just listing them from the table. This just for debugging
  */
 function getPairedPlayers() {
-  var thePlayers = [];
+    var pairedPlayersList = [];
 
-  var sheet = getGamesSheet();
-  var cellData = getData(sheet);
-  // Sheets.Spreadsheets.Values.get(spreadsheetId, range);
+    var sheet = getGamesSheet();
+    var cellData = getData(sheet);
+    // Sheets.Spreadsheets.Values.get(spreadsheetId, range);
 
-  var row = null;
-  for (var i = 0; i < cellData.length - 1; i++) {
-      row = cellData[i];
-      thePlayers.push(row[1] + " vs " + row[2]);
-  }
+    var row = null;
+    for (var i = 0; i < cellData.length - 1; i++) {
+        row = cellData[i];
+        var str = row[getPlayer1Col()] + " vs " + row[getPlayer2Col()];
+        pairedPlayersList.push(str);
+    }
 
-  return thePlayers;
+    return pairedPlayersList;
 }
 
+/**
+ * If the player is alone at the table and leaves, then the row is removed.
+ * If there is another player there, then this player loses the game.
+ */
+function playerLeaves() {
+     var sheet = getGamesSheet();
+     var data = getData(sheet);
+     var lastRowNum = data.length - 2;
+     var lastRow = data[lastRowNum];
+     var user = getUserId();
+     var players = getPlayersFromRow(lastRow);
+
+     if (isThisPlayerAlreadyWaiting(user, players)) {
+         sheet.deleteRow(lastRowNum + 2);
+     }
+}
 
 function getPlayerIdCol() {
   return 0;

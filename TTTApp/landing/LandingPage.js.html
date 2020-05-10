@@ -13,7 +13,7 @@
 
    function initialize() {
      initializeButtons();
-     continuouslyShowCurrentPlayers();
+     continuouslyShowAllPlayers();
   }
 
   function initializeButtons() {
@@ -31,12 +31,12 @@
 
   function continuouslyShowAllPlayers() {
       showAllPlayers();
-      setTimeout(continuouslyShowAllPlayers, 1000);
+      setTimeout(continuouslyShowAllPlayers, 100);
   }
 
   function showAllPlayers() {
     google.script.run
-        .withSuccessHandler(populatePlayersList)
+        .withSuccessHandler(populatePlayerPairsList)
         .withFailureHandler(showError)
         .getPairedPlayers();
   }
@@ -44,7 +44,7 @@
   /**
    * @param players list of currently available or active players.
    */
-  function populatePlayersList(players) {
+  function populatePlayerPairsList(players) {
     const container = document.querySelector("#players");
     removeChildren(container);
 
@@ -58,7 +58,6 @@
   function enterGame() {
 
       google.script.run
-        .withSuccessHandler(populatePlayersList)
         .withFailureHandler(showError)
         .newPlayerEnters();
 
@@ -75,7 +74,7 @@
   function leaveGame() {
       google.script.run
         .withFailureHandler(showError)
-        .removePlayer();
+        .playerLeaves();
 
       getPlayButton().disabled = false;
       getQuitButton().disabled = true;
