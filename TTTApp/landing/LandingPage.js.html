@@ -1,5 +1,9 @@
 <script>
 
+  var thisPlayersMove = false;   // When true, the player is allowed to move.
+  var thisPlayersSymbol = null;  // Will be either X or O
+  var thisGameId = null;         // unique ID of the current game (once it starts)
+
   /**
    * Run initializations on page load.
    */
@@ -13,12 +17,10 @@
 
    function initialize() {
        initializeButtons();
-       initializeBoard();
-       continuouslyShowAllPlayers();
+       //continuouslyShowAllPlayers();
    }
 
   function initializeButtons() {
-
     getPlayButton().addEventListener("click", function(){
        enterGame();
     });
@@ -30,35 +32,8 @@
     });
   }
 
-  function continuouslyShowAllPlayers() {
-      showAllPlayers();
-      setTimeout(continuouslyShowAllPlayers, 1000);
-  }
-
-  function showAllPlayers() {
-    google.script.run
-        .withSuccessHandler(populatePlayerPairsList)
-        .withFailureHandler(showError)
-        .getPairedPlayers();
-  }
-
-  /**
-   * @param players list of currently available or active players.
-   */
-  function populatePlayerPairsList(playerPairs) {
-      var container = document.querySelector("#players");
-      removeChildren(container);
-
-      for (var i = 0; i < playerPairs.length; i++) {
-          const playerLi = document.createElement("li");
-          var ppair = playerPairs[i]
-          playerLi.textContent = ppair[0] + " vs " + ppair[1];
-          container.appendChild(playerLi);
-      }
-  }
-
   function enterGame() {
-      document.querySelector("#directions").textContent = 'Waiting for opponent...';
+      getDirectionsEl().textContent = 'Waiting for opponent...';
       google.script.run
         .withSuccessHandler(waitForOpponent)
         .withFailureHandler(showError)
@@ -75,7 +50,9 @@
 
       getPlayButton().disabled = false;
       getQuitButton().disabled = true;
-      document.querySelector("#directions").textContent = 'You forfeit!';
+      thisPlayersMove = false;
+      thisPlayersSymbol = null;
+      getDirectionsEl().textContent = 'You forfeit!';
   }
 
   /**
@@ -95,14 +72,23 @@
 
   function gameStarted(players) {
       var user = document.querySelector("#userid").textContent;
-      // If no second player for that last one, then no longer waiting
-      var directionsEl = document.querySelector("#directions");
+      var directionsEl = getDirectionsEl();
 
-      var directions = players.player1 == user ?
+      var isPlayerX = players.player1 == user;
+      thisPlayersSymbol = isPlayerX ? 'X' : 'O';
+      thisPlayersMove = isPlayerX;
+      thisGameId = players.gameId;
+
+      var directions = isPlayerX ?
         "Found player for you to play. You will be playing X against <b>" + players.player2 + "</b>." :
         "You will be playing O against <b>" + players.player1 + "</b>.";
 
       directionsEl.innerHTML = directions;
+      initializeBoard();
+  }
+
+  function getDirectionsEl() {
+      return document.querySelector("#directions");
   }
 
   function getPlayButton() {

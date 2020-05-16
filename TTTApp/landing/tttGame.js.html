@@ -3,44 +3,105 @@
     /**
      * Dynamically create the TTT board. It will look like this:
      * <div class="row">
-     *    <div class="cell" onclick="cellClicked(0)">
-     *    <div class="cell" onclick="cellClicked(1)">
-     *    <div class="cell" onclick="cellClicked(2)">
+     *    <div id="cell0" class="cell" onclick="cellClicked(0)">
+     *    <div id="cell1" class="cell" onclick="cellClicked(1)">
+     *    <div id="cell2" class="cell" onclick="cellClicked(2)">
      * <div>
      * <div class="row">
-     *    <div class="cell" onclick="cellClicked(3)">
-     *    <div class="cell" onclick="cellClicked(4)">
-     *    <div class="cell" onclick="cellClicked(5)">
+     *    :
      * <div>
      * <div class="row">
-     *    <div class="cell" onclick="cellClicked(6)">
-     *    <div class="cell" onclick="cellClicked(7)">
-     *    <div class="cell" onclick="cellClicked(8)">
+     *    :
      * <div>
      */
     function initializeBoard() {
-        var boardDiv = document.querySelector("#board");
+        var boardDiv = getBoardDiv();
+        boardDiv.innerHTML = ''; // clear board
 
         for (var row = 0; row < 3; row++) {
-           var rowDiv = document.createElement("div");
-           rowDiv.className = "row";
-           for (var col = 0; col < 3; col++) {
-               var cellDiv = document.createElement("div");
-               cellDiv.className = "cell";
-               cellDiv.addEventListener("click", getCellClickedFunction(row * 3 + col));
-               rowDiv.appendChild(cellDiv);
-           }
-           boardDiv.appendChild(rowDiv);
+             var rowDiv = document.createElement("div");
+             rowDiv.className = "row";
+             for (var col = 0; col < 3; col++) {
+                 var cellDiv = document.createElement("div");
+                 var position = 3 * row + col;
+                 cellDiv.className = 'cell';
+                 cellDiv.id = 'cell' + position;
+                 cellDiv.addEventListener("click", getCellClickedFunction(position));
+                 cellDiv.textContent = ' ';
+                 rowDiv.appendChild(cellDiv);
+             }
+             boardDiv.appendChild(rowDiv);
         }
-        boardDiv.append()
+
+        if (thisPlayersSymbol == 'O') {
+            waitForOtherPlayerMove();
+        }
     }
 
     function getCellClickedFunction(cellPos) {
-        return function() {
-            alert("cellPos = " + cellPos);
+        return function(e) {
+            var currentContent = e.target.textContent;
+            if (thisPlayersMove) {
+               if (currentContent == ' ') {
+                    e.target.textContent = thisPlayersSymbol;
+                    makeThisPlayersMoveAt(cellPos);
+                }
+                else {
+                    alert("You cannot play there!");
+                }
+            }
         }
     }
 
+    function makeThisPlayersMoveAt(cellPos) {
+        // prevent this player from moving again until other player has moved.
+        thisPlayersMove = false;
 
+        var otherPlayer = thisPlayersSymbol == 'X' ? 'O' : 'X';
+        getDirectionsEl().textContent = "Waiting for " + otherPlayer + " to move...";
+
+        google.script.run
+            .withSuccessHandler(waitForOtherPlayerMove)
+            .withFailureHandler(showError)
+            .doPlayerMove(thisGameId, thisPlayersSymbol, cellPos);
+    }
+
+    function waitForOtherPlayerMove() {
+        checkAndUpdateGame();
+        if (!thisPlayersMove) {
+            console.log("recursive call polling for other player to move... ");
+            // not sure why this is not working on FireFox
+            setTimeout(function() { waitForOtherPlayerMove(); }, 1000);
+        }
+    }
+
+    function checkAndUpdateGame() {
+        google.script.run
+            .withSuccessHandler(redrawGameBoard)
+            .withFailureHandler(showError)
+            .getCurrentGameBoard(thisGameId);
+    }
+
+    /** game data will be a string of length 9
+     * @param gameData is an object like this
+     *     { boardId, board, nextPlayer }
+     */
+    function redrawGameBoard(gameData) {
+        console.log("redrawing gameData = " + JSON.stringify(gameData) + "\nthisPlayersSymbol="+ thisPlayersSymbol);
+        var boardDiv = getBoardDiv();
+        for (var i = 0; i < gameData.board.length; i++) {
+            var cell = document.querySelector("#cell" + i);
+            var content = gameData.board.charAt(i);
+            cell.textContent = content == '_' ? ' ' : content;
+        }
+        if (gameData.nextPlayer == thisPlayersSymbol) {
+            thisPlayersMove = true;
+            getDirectionsEl().textContent = "Your move, " + thisPlayersSymbol;
+        }
+    }
+
+    function getBoardDiv() {
+        return document.querySelector("#board");
+    }
 
 </script>

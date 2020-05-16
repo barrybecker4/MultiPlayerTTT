@@ -21,19 +21,26 @@ function getData(sheet) {
   return sheet.getSheetValues(2, 1, sheet.getLastRow(), sheet.getLastColumn());
 }
 
+function getGameData() {
+    var sheet = getGamesSheet();
+    return getData(sheet);
+}
+
 /**
  * When a new player enters, they will either be the first or second player.
  * These steps are performed:
- * - If last row contains this player as player1 and has no second player, then do nothing else.
+ * - If last row contains this player as player1,
+ *   and has no second player, then do nothing else (as they are already waiting).
  * - If last row contains player1 (not == this player) and has no second player, then add this player as second player,
- *   and set the status to active.
+ *   and set the game status to "active". It has officially started.
  * - If last row contains player1 and player2 already, then it is an active or finished game,
  *   so create a new row and add this player as player 1 and set the status to "pending".
  */
 function newPlayerEnters() {
   var sheet = getGamesSheet();
   var data = getData(sheet);
-  // last row always blanks, so take the one before
+
+  // The last row is always blanks, so take the one before.
   var lastRowNum = data.length - 2;
   var lastRow = lastRowNum >= 0 ? data[lastRowNum] : null;
 
@@ -47,7 +54,7 @@ function newPlayerEnters() {
   }
   else if (isAnotherPlayerWaiting(user, players)) {
       playAsPlayer2(user, sheet);
-      newPlayers = { player1: players.player1, player2: user };
+      newPlayers = { gameId: players.gameId, player1: players.player1, player2: user };
   }
   else if (noPlayersWaiting(players, lastRowNum)) {
       createNewGame(user, lastRowNum, sheet);
@@ -58,8 +65,8 @@ function newPlayerEnters() {
 }
 
 function checkForOpponent() {
-    var sheet = getGamesSheet();
-    var data = getData(sheet);
+    var data = getGameData();
+
     // last row always blanks, so take the one before
     var lastRowNum = data.length - 2;
     var lastRow = data[lastRowNum];
@@ -80,7 +87,7 @@ function noPlayersWaiting(players, lastRowNum) {
 }
 
 function getPlayersFromRow(row) {
-    return row ? { player1: row[getPlayer1Col()], player2: row[getPlayer2Col()] } : null;
+    return row ? {gameId: row[getGameIdCol()], player1: row[getPlayer1Col()], player2: row[getPlayer2Col()] } : null;
 }
 
 function playAsPlayer2(user, sheet) {
@@ -88,25 +95,24 @@ function playAsPlayer2(user, sheet) {
   var col = getPlayer2Col() + 1;
 
   // the game is now officially started
-  sheet.getRange(lastRow, col, 1, 2)
-      .setValues([[user, status.ACTIVE]]);
+  sheet.getRange(lastRow, col, 1, 3)
+      .setValues([[user, '', status.ACTIVE]]);
 }
 
 function createNewGame(user, lastRowNum, sheet) {
     var lastRow = sheet.getLastRow();
     var players = getPlayersFromRow(lastRow);
-    sheet.getRange(lastRow + 1, getPlayer1Col() + 1, 1, 3)
-        .setValues([[user, '', status.PENDING]]);
+    sheet.getRange(lastRow + 1, getGameIdCol() + 1, 1, sheet.getLastColumn())
+        .setValues([[lastRow + 1, user, '', '', status.PENDING, '_________']]);
 }
 
 /**
  * Get all paired players. Just listing them from the table. This just for debugging
- */
+ *
 function getPairedPlayers() {
     var pairedPlayersList = [];
 
-    var sheet = getGamesSheet();
-    var cellData = getData(sheet);
+    var cellData = getGameData();
     // Sheets.Spreadsheets.Values.get(spreadsheetId, range);
 
     var row = null;
@@ -117,7 +123,7 @@ function getPairedPlayers() {
     }
 
     return pairedPlayersList;
-}
+}*/
 
 /**
  * If the player is alone at the table and leaves, then the row is removed.
@@ -136,7 +142,7 @@ function playerLeaves() {
      }
 }
 
-function getPlayerIdCol() {
+function getGameIdCol() {
   return 0;
 }
 function getPlayer1Col() {
@@ -145,9 +151,12 @@ function getPlayer1Col() {
 function getPlayer2Col() {
   return 2;
 }
-function getStatusCol() {
+function getLastPlayerCol() {
   return 3;
 }
-function getBoardCol() {
+function getStatusCol() {
   return 4;
+}
+function getBoardCol() {
+  return 5;
 }
