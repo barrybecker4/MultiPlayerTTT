@@ -13,6 +13,7 @@
 
    function initialize() {
        initializeButtons();
+       initializeBoard();
        continuouslyShowAllPlayers();
    }
 
@@ -57,7 +58,7 @@
   }
 
   function enterGame() {
-      document.querySelector("#directions").textContent = 'Waiting for oppoent...';
+      document.querySelector("#directions").textContent = 'Waiting for opponent...';
       google.script.run
         .withSuccessHandler(waitForOpponent)
         .withFailureHandler(showError)
@@ -85,7 +86,6 @@
            gameStarted(players);
       }
       else {
-           //setTimeout(waitForOpponent, 500);
            google.script.run
               .withSuccessHandler(waitForOpponent)
               .withFailureHandler(showError)
@@ -99,10 +99,10 @@
       var directionsEl = document.querySelector("#directions");
 
       var directions = players.player1 == user ?
-        "Found player for you to play. You will be playing X against " + players.player2 + "." :
-        "You will be playing O against " + players.player1 + ".";
+        "Found player for you to play. You will be playing X against <b>" + players.player2 + "</b>." :
+        "You will be playing O against <b>" + players.player1 + "</b>.";
 
-      directionsEl.textContent  = directions
+      directionsEl.innerHTML = directions;
   }
 
   function getPlayButton() {

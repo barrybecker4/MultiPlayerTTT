@@ -1,0 +1,46 @@
+<script>
+
+    /**
+     * Dynamically create the TTT board. It will look like this:
+     * <div class="row">
+     *    <div class="cell" onclick="cellClicked(0)">
+     *    <div class="cell" onclick="cellClicked(1)">
+     *    <div class="cell" onclick="cellClicked(2)">
+     * <div>
+     * <div class="row">
+     *    <div class="cell" onclick="cellClicked(3)">
+     *    <div class="cell" onclick="cellClicked(4)">
+     *    <div class="cell" onclick="cellClicked(5)">
+     * <div>
+     * <div class="row">
+     *    <div class="cell" onclick="cellClicked(6)">
+     *    <div class="cell" onclick="cellClicked(7)">
+     *    <div class="cell" onclick="cellClicked(8)">
+     * <div>
+     */
+    function initializeBoard() {
+        var boardDiv = document.querySelector("#board");
+
+        for (var row = 0; row < 3; row++) {
+           var rowDiv = document.createElement("div");
+           rowDiv.className = "row";
+           for (var col = 0; col < 3; col++) {
+               var cellDiv = document.createElement("div");
+               cellDiv.className = "cell";
+               cellDiv.addEventListener("click", getCellClickedFunction(row * 3 + col));
+               rowDiv.appendChild(cellDiv);
+           }
+           boardDiv.appendChild(rowDiv);
+        }
+        boardDiv.append()
+    }
+
+    function getCellClickedFunction(cellPos) {
+        return function() {
+            alert("cellPos = " + cellPos);
+        }
+    }
+
+
+
+</script>

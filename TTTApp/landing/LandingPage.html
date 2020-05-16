@@ -22,12 +22,13 @@
 
     <div id="main-div">
         <div>
-            <button id="play" class="text">Play</button>
-            <button id="quit" class="text">Quit</button>
+            <button id="play" class="text" title="Click to start a game">Play</button>
+            <button id="quit" class="text" title="Click to quit playing (in other words, resign)">Quit</button>
         </div>
         <div id="directions" class="text">Click play to start a game.</div>
     </div>
-    <div id="board"></div>
+    <div id="board" class="table">
+    </div>
     <br>
     <div class="text">
         <div>Active Players:</div>
@@ -42,3 +43,4 @@
 <!-- put the javascript includes last so that the page loads first and faster -->
 <?!= include('common.js'); ?>
 <?!= include('landing/LandingPage.js'); ?>
+<?!= include('landing/tttGame.js'); ?>
