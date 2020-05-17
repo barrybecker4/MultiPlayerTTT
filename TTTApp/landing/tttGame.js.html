@@ -68,7 +68,7 @@
 
     function waitForOtherPlayerMove() {
         checkAndUpdateGame();
-        if (!thisPlayersMove) {
+        if (thisPlayersSymbol && !thisPlayersMove) {
             console.log("recursive call polling for other player to move... ");
             // not sure why this is not working on FireFox
             setTimeout(function() { waitForOtherPlayerMove(); }, 1000);
@@ -88,15 +88,43 @@
      */
     function redrawGameBoard(gameData) {
         console.log("redrawing gameData = " + JSON.stringify(gameData) + "\nthisPlayersSymbol="+ thisPlayersSymbol);
-        var boardDiv = getBoardDiv();
-        for (var i = 0; i < gameData.board.length; i++) {
-            var cell = document.querySelector("#cell" + i);
-            var content = gameData.board.charAt(i);
-            cell.textContent = content == '_' ? ' ' : content;
-        }
-        if (gameData.nextPlayer == thisPlayersSymbol) {
+        drawBoard(gameData.board);
+
+        if (gameData.nextPlayer == thisPlayersSymbol && gameData.status == 'ACTIVE') {
             thisPlayersMove = true;
             getDirectionsEl().textContent = "Your move, " + thisPlayersSymbol;
+        }
+
+        updateDirections(gameData.status);
+    }
+
+    function drawBoard(board) {
+        var boardDiv = getBoardDiv();
+        for (var i = 0; i < board.length; i++) {
+            var cell = document.querySelector("#cell" + i);
+            var content = board.charAt(i);
+            cell.textContent = content == '_' ? ' ' : content;
+        }
+    }
+
+    function updateDirections(status) {
+
+        if (status != 'ACTIVE') {
+            var directions = '';
+            if (status == 'TIE') {
+                directions = 'It was a tie!';
+            }
+            else if (status.indexOf('_WON') >= 0) {
+                var winningPlayer = status.charAt(0);
+                if (winningPlayer == thisPlayersSymbol) {
+                    directions = "You won!!";
+                } else {
+                    directions = "Sorry, " + winningPlayer + " won!";
+                }
+            }
+            thisPlayersSymbol = null;
+            thisPlayersMove = false;
+            getDirectionsEl().textContent = directions;
         }
     }
 

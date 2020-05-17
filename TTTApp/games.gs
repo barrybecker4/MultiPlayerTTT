@@ -4,9 +4,10 @@ var status = {
     ACTIVE: 'ACTIVE',
     X_WIN: 'X_WIN',
     O_WIN: 'O_WIN',
+    TIE: 'TIE',
     X_BY_RESIGN: 'X_BY_RESIGN',
     O_BY_RESIGN: 'O_BY_RESIGN',
-}
+};
 
 function getGamesSheet() {
   const id = getConfig().gamesSheet;

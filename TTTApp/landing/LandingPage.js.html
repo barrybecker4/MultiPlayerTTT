@@ -60,10 +60,10 @@
    */
   function waitForOpponent(players) {
       if (players.player2) {
-           gameStarted(players);
+          gameStarted(players);
       }
       else {
-           google.script.run
+          google.script.run
               .withSuccessHandler(waitForOpponent)
               .withFailureHandler(showError)
               .checkForOpponent();
