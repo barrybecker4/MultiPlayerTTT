@@ -60,9 +60,6 @@
     function makeThisPlayersMoveAt(cellPos) {
         thisPlayersMove = false; // prevents more play
 
-        var otherPlayer = thisPlayersSymbol == 'X' ? 'O' : 'X';
-        getDirectionsEl().textContent = "Waiting for " + otherPlayer + " to move...";
-
         google.script.run
             .withSuccessHandler(updateAndWaitForOtherPlayer)
             .withFailureHandler(showError)
@@ -71,7 +68,9 @@
 
     function updateAndWaitForOtherPlayer(gameData) {
         redrawGameBoard(gameData)
-        if (thisPlayersSymbol) {  // if still playing
+        if (thisPlayersSymbol && !thisPlayersMove) {  // if still playing
+            var otherPlayer = thisPlayersSymbol == 'X' ? 'O' : 'X';
+            getDirectionsEl().textContent = "Waiting for " + otherPlayer + " to move...";
             waitForOtherPlayerMove();
         }
     }
@@ -100,15 +99,15 @@
      *     { boardId, board, nextPlayer }
      */
     function redrawGameBoard(gameData) {
-        console.log("redrawing gameData = " + JSON.stringify(gameData) + "\nthisPlayersSymbol="+ thisPlayersSymbol);
-        drawBoard(gameData.board);
+        console.log("redrawing gameData = " + JSON.stringify(gameData) + "\nthisPlayersSymbol=" + thisPlayersSymbol);
+        drawBoard(gameData.boardData);
 
         if (gameData.nextPlayer == thisPlayersSymbol && gameData.status == 'ACTIVE') {
             thisPlayersMove = true;
             getDirectionsEl().textContent = "Your move, " + thisPlayersSymbol;
+        } else {
+            updateIfGameOver(gameData.status);
         }
-
-        updateIfGameOver(gameData.status);
     }
 
     function drawBoard(board) {
