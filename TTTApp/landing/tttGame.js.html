@@ -42,8 +42,9 @@
         return function(e) {
             var currentContent = e.target.textContent;
             if (thisPlayersMove) {
-               if (currentContent == ' ') {
+                if (currentContent == ' ') {
                     e.target.textContent = thisPlayersSymbol;
+                    console.log(thisPlayersSymbol + " clicked at " + cellPos);
                     makeThisPlayersMoveAt(cellPos);
                 }
                 else {
@@ -66,30 +67,23 @@
             .doPlayerMove(thisGameId, thisPlayersSymbol, cellPos);
     }
 
-    function updateAndWaitForOtherPlayer(gameData) {
-        redrawGameBoard(gameData)
-        if (thisPlayersSymbol && !thisPlayersMove) {  // if still playing
-            var otherPlayer = thisPlayersSymbol == 'X' ? 'O' : 'X';
-            getDirectionsEl().textContent = "Waiting for " + otherPlayer + " to move...";
-            waitForOtherPlayerMove();
-        }
-    }
-
     /**
      * @param boardState contains status and winningPositions (if any)
      */
-    function waitForOtherPlayerMove() {
-        checkAndUpdateGame();
+    function updateAndWaitForOtherPlayer(gameData) {
+        redrawGameBoard(gameData);
         if (thisPlayersSymbol && !thisPlayersMove) {
+            var otherPlayer = thisPlayersSymbol == 'X' ? 'O' : 'X';
+            getDirectionsEl().textContent = "Waiting for " + otherPlayer + " to move...";
             console.log("recursive call polling for other player to move... ");
             // not sure why this does not always work on FireFox
             setTimeout(waitForOtherPlayerMove, 1000);
         }
     }
 
-    function checkAndUpdateGame() {
+    function waitForOtherPlayerMove() {
         google.script.run
-            .withSuccessHandler(redrawGameBoard)
+            .withSuccessHandler(updateAndWaitForOtherPlayer)
             .withFailureHandler(showError)
             .getCurrentGameBoard(thisGameId);
     }
