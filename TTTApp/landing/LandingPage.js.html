@@ -17,7 +17,6 @@
 
    function initialize() {
        initializeButtons();
-       //continuouslyShowAllPlayers();
    }
 
   function initializeButtons() {
@@ -28,7 +27,7 @@
     const quitButton = getQuitButton();
     quitButton.disabled = true;
     quitButton.addEventListener("click", function(){
-      leaveGameBeforeOver();
+      playerQuits();
     });
   }
 
@@ -39,12 +38,24 @@
         .withFailureHandler(showError)
         .newPlayerEnters();
 
-      getPlayButton().disabled = true;
-      getQuitButton().disabled = false;
+      toggleButtons();
   }
 
-  function leaveGameBeforeOver() {
-    getDirectionsEl().textContent = 'You forfeit!';
+  function playerQuits() {
+      if (thisPlayersSymbol) {
+          playerQuitsPlaying();
+      } else {
+          getDirectionsEl().textContent = 'You quit before the game even started!';
+          toggleButtons();
+      }
+  }
+
+  function toggleButtons() {
+      var playButton = getPlayButton();
+      var quitButton = getQuitButton();
+      // console.log("togging buttons. quit disabled = " + quitButton.disabled);
+      playButton.disabled = !playButton.disabled;
+      quitButton.disabled = !quitButton.disabled;
   }
 
   function leaveGame() {
@@ -52,8 +63,7 @@
         .withFailureHandler(showError)
         .playerLeaves();
 
-      getPlayButton().disabled = false;
-      getQuitButton().disabled = true;
+      toggleButtons();
       thisPlayersMove = false;
       thisPlayersSymbol = null;
   }

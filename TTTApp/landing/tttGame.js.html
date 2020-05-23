@@ -67,13 +67,24 @@
             .doPlayerMove(thisGameId, thisPlayersSymbol, cellPos);
     }
 
+    function playerQuitsPlaying() {
+        var otherPlayer = getOtherPlayer();
+        console.log("thisP = " + thisPlayersSymbol + " is quitting.  other = " + otherPlayer);
+
+        google.script.run
+            .withFailureHandler(showError)
+            .doPlayerQuits(thisGameId, thisPlayersSymbol);
+
+        updateIfGameOver(otherPlayer + '_BY_RESIGN');
+    }
+
     /**
      * @param boardState contains status and winningPositions (if any)
      */
     function updateAndWaitForOtherPlayer(gameData) {
         redrawGameBoard(gameData);
         if (thisPlayersSymbol && !thisPlayersMove) {
-            var otherPlayer = thisPlayersSymbol == 'X' ? 'O' : 'X';
+            var otherPlayer = getOtherPlayer();
             getDirectionsEl().textContent = "Waiting for " + otherPlayer + " to move...";
             console.log("recursive call polling for other player to move... ");
             // not sure why this does not always work on FireFox
@@ -90,7 +101,7 @@
 
     /**
      * @param gameData is an object like this, where board is a string with 9 characters.
-     *     { boardId, board, nextPlayer }
+     *     { boardId, status, board, nextPlayer }
      */
     function redrawGameBoard(gameData) {
         console.log("redrawing gameData = " + JSON.stringify(gameData) + "\nthisPlayersSymbol=" + thisPlayersSymbol);
@@ -121,17 +132,26 @@
             }
             else if (status.indexOf('_WON') >= 0) {
                 var winningPlayer = status.charAt(0);
-                if (winningPlayer == thisPlayersSymbol) {
-                    directions = "You won!!";
-                } else {
-                    directions = "Sorry, " + winningPlayer + " won!";
-                }
+                directions = (winningPlayer == thisPlayersSymbol) ?
+                    "You won!!" :
+                    "Sorry you lose. " + winningPlayer + " won!";
+            }
+            else if (status.indexOf('_BY_RESIGN') >= 0) {
+                var winningPlayer = status.charAt(0);
+                var losingPlayer = winningPlayer == 'X' ? 'O' : 'X';
+                directions = (winningPlayer == thisPlayersSymbol) ?
+                    "You (" + winningPlayer + ") win because the other player resigned." :
+                    "You (" + losingPlayer + ") quit, so you lose!";
             }
             thisPlayersSymbol = null;
             thisPlayersMove = false;
             getDirectionsEl().textContent = directions;
             leaveGame();
         }
+    }
+
+    function getOtherPlayer() {
+        return thisPlayersSymbol == 'X' ? 'O' : 'X';
     }
 
     function getBoardDiv() {

@@ -4,7 +4,7 @@
 /**
  * Set the symbol in the sheet in the board data column,
  * and set the lastPlayer to move value as well (from playersSymbol).
- * return {  status, winningPositions, boardData, nextPlayer }
+ * return { status, winningPositions, boardData, nextPlayer }
  */
 function doPlayerMove(gameId, playersSymbol, cellPos) {
     var sheet = getGamesSheet();
@@ -17,6 +17,17 @@ function doPlayerMove(gameId, playersSymbol, cellPos) {
 
     gameRange.setValues([[playersSymbol, state.status, state.boardData]]);
     return state;
+}
+
+/**
+ * The player playerSymbol quits. Update state in sheet.
+ */
+function doPlayerQuits(gameId, playersSymbol) {
+    var sheet = getGamesSheet();
+    var gameRange = sheet.getRange(gameId, getLastPlayerCol() + 1, 1, 2);
+
+    var newStatus = playersSymbol == 'X' ? status.O_BY_RESIGN : status.X_BY_RESIGN;
+    gameRange.setValues([[playersSymbol, newStatus]]);
 }
 
 /**
