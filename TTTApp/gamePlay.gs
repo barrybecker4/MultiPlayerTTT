@@ -4,6 +4,7 @@
 /**
  * Set the symbol in the sheet in the board data column,
  * and set the lastPlayer to move value as well (from playersSymbol).
+ * return {  status, winningPositions, boardData }
  */
 function doPlayerMove(gameId, playersSymbol, cellPos) {
     var sheet = getGamesSheet();
@@ -13,9 +14,10 @@ function doPlayerMove(gameId, playersSymbol, cellPos) {
     var boardData = gameData[2];
 
     var newBoardData = boardData.substr(0, cellPos) + playersSymbol + boardData.substr(cellPos + 1);
-    var state = determineBoardState(boardData);
+    var state = determineBoardState(newBoardData);
 
     gameRange.setValues([[playersSymbol, state.status, newBoardData]]);
+    return state;
 }
 
 /**
@@ -57,7 +59,7 @@ function unitTests() {
 
 /**
  * @return current board state in an object that looks like this:
- *  { status: boardStatus, winningPositions: <[p1, p2, p4] | null if none> }
+ *  { status: boardStatus, winningPositions: <[p1, p2, p4] | null if none> } // boardId, board, nextPlayer
  */
 function determineBoardState(boardData) {
     var winningPositions = checkRows(boardData) || checkColumns(boardData) || checkDiagonals(boardData);
@@ -66,6 +68,7 @@ function determineBoardState(boardData) {
     return {
         status: theStatus,
         winningPositions: winningPositions,
+        board: boardData
     };
 }
 

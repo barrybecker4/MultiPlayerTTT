@@ -47,31 +47,44 @@
                     makeThisPlayersMoveAt(cellPos);
                 }
                 else {
-                    alert("You cannot play there!");
+                    alert("You cannot play in an occupied square!");
                 }
             }
         }
     }
 
+    /**
+     * Make a move for the current player at the specified position.
+     * Prevent this player from moving again until other player has moved.
+     */
     function makeThisPlayersMoveAt(cellPos) {
-        // prevent this player from moving again until other player has moved.
-        thisPlayersMove = false;
+        thisPlayersMove = false; // prevents more play
 
         var otherPlayer = thisPlayersSymbol == 'X' ? 'O' : 'X';
         getDirectionsEl().textContent = "Waiting for " + otherPlayer + " to move...";
 
         google.script.run
-            .withSuccessHandler(waitForOtherPlayerMove)
+            .withSuccessHandler(updateAndWaitForOtherPlayer)
             .withFailureHandler(showError)
             .doPlayerMove(thisGameId, thisPlayersSymbol, cellPos);
     }
 
+    function updateAndWaitForOtherPlayer(gameData) {
+        redrawGameBoard(gameData)
+        if (thisPlayersSymbol) {  // if still playing
+            waitForOtherPlayerMove();
+        }
+    }
+
+    /**
+     * @param boardState contains status and winningPositions (if any)
+     */
     function waitForOtherPlayerMove() {
         checkAndUpdateGame();
         if (thisPlayersSymbol && !thisPlayersMove) {
             console.log("recursive call polling for other player to move... ");
-            // not sure why this is not working on FireFox
-            setTimeout(function() { waitForOtherPlayerMove(); }, 1000);
+            // not sure why this does not always work on FireFox
+            setTimeout(waitForOtherPlayerMove, 1000);
         }
     }
 
@@ -82,8 +95,8 @@
             .getCurrentGameBoard(thisGameId);
     }
 
-    /** game data will be a string of length 9
-     * @param gameData is an object like this
+    /**
+     * @param gameData is an object like this, where board is a string with 9 characters.
      *     { boardId, board, nextPlayer }
      */
     function redrawGameBoard(gameData) {
@@ -95,7 +108,7 @@
             getDirectionsEl().textContent = "Your move, " + thisPlayersSymbol;
         }
 
-        updateDirections(gameData.status);
+        updateIfGameOver(gameData.status);
     }
 
     function drawBoard(board) {
@@ -107,8 +120,7 @@
         }
     }
 
-    function updateDirections(status) {
-
+    function updateIfGameOver(status) {
         if (status != 'ACTIVE') {
             var directions = '';
             if (status == 'TIE') {
@@ -125,6 +137,7 @@
             thisPlayersSymbol = null;
             thisPlayersMove = false;
             getDirectionsEl().textContent = directions;
+            leaveGame();
         }
     }
 

@@ -28,7 +28,7 @@
     const quitButton = getQuitButton();
     quitButton.disabled = true;
     quitButton.addEventListener("click", function(){
-      leaveGame();
+      leaveGameBeforeOver();
     });
   }
 
@@ -43,6 +43,10 @@
       getQuitButton().disabled = false;
   }
 
+  function leaveGameBeforeOver() {
+    getDirectionsEl().textContent = 'You forfeit!';
+  }
+
   function leaveGame() {
       google.script.run
         .withFailureHandler(showError)
@@ -52,7 +56,6 @@
       getQuitButton().disabled = true;
       thisPlayersMove = false;
       thisPlayersSymbol = null;
-      getDirectionsEl().textContent = 'You forfeit!';
   }
 
   /**
