@@ -27,6 +27,57 @@ function getGameData() {
     return getData(sheet);
 }
 
+function retrieveSomeData() {
+    // Replace this value with the project ID listed in the Google Cloud Platform project.
+    var projectId = 'onlinettt';
+
+    var request = {
+        query: 'SELECT * FROM games.games;'
+    };
+    var queryResults = BigQuery.Jobs.query(request, projectId);
+    var jobId = queryResults.jobReference.jobId;
+
+    // Check on status of the Query Job.
+    var sleepTimeMs = 200;
+    while (!queryResults.jobComplete) {
+        Utilities.sleep(sleepTimeMs);
+        sleepTimeMs *= 2;
+        queryResults = BigQuery.Jobs.getQueryResults(projectId, jobId);
+    }
+
+    // Get all the rows of results.
+    var rows = queryResults.rows;
+    while (queryResults.pageToken) {
+        queryResults = BigQuery.Jobs.getQueryResults(projectId, jobId, {
+            pageToken: queryResults.pageToken
+        });
+        rows = rows.concat(queryResults.rows);
+    }
+
+    var text = "";
+    if (rows) {
+
+        // Append the headers.
+        var headers = queryResults.schema.fields.map(function(field) {
+          return field.name;
+        });
+        //sheet.appendRow(headers);
+
+        // Append the results.
+        var data = new Array(rows.length);
+        for (var i = 0; i < rows.length; i++) {
+            var cols = rows[i].f;
+            data[i] = new Array(cols.length);
+            for (var j = 0; j < cols.length; j++) {
+                //data[i][j] = cols[j].v;
+                text += cols[j].v + ", ";
+            }
+            text += "\n";
+        }
+    }
+    return text;
+}
+
 /**
  * When a new player enters, they will either be the first or second player.
  * These steps are performed:

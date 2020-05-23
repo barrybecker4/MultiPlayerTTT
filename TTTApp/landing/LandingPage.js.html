@@ -29,6 +29,24 @@
     quitButton.addEventListener("click", function(){
       playerQuits();
     });
+
+    const queryButton = document.querySelector("#show-data");
+    queryButton.disabled = false;
+    queryButton.addEventListener("click", function() {
+      showSomeData();
+    });
+  }
+
+  function showSomeData() {
+      google.script.run
+          .withSuccessHandler(showQueryData)
+          .withFailureHandler(showError)
+          .retrieveSomeData();
+  }
+
+  function showQueryData(data) {
+      var el = document.querySelector("#temp");
+      el.textContent = data;
   }
 
   function enterGame() {
