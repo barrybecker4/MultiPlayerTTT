@@ -29,24 +29,6 @@
     quitButton.addEventListener("click", function(){
       playerQuits();
     });
-
-    const queryButton = document.querySelector("#show-data");
-    queryButton.disabled = false;
-    queryButton.addEventListener("click", function() {
-      showSomeData();
-    });
-  }
-
-  function showSomeData() {
-      google.script.run
-          .withSuccessHandler(showQueryData)
-          .withFailureHandler(showError)
-          .retrieveSomeData();
-  }
-
-  function showQueryData(data) {
-      var el = document.querySelector("#temp");
-      el.textContent = data;
   }
 
   function enterGame() {
@@ -76,10 +58,10 @@
       quitButton.disabled = !quitButton.disabled;
   }
 
-  function leaveGame() {
+  function leaveGame(gameID) {
       google.script.run
         .withFailureHandler(showError)
-        .playerLeaves();
+        .playerLeaves(gameID);
 
       toggleButtons();
       thisPlayersMove = false;

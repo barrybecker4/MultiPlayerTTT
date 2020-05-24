@@ -1,3 +1,9 @@
+/**
+ * remove this shortly
+ */
+PropertiesService.getScriptProperties()
+                 .setProperty("CONFIG_SHEET_ID", "");
+
 // Allowed game status
 var status = {
     PENDING: 'PENDING',
@@ -8,29 +14,6 @@ var status = {
     X_BY_RESIGN: 'X_BY_RESIGN',
     O_BY_RESIGN: 'O_BY_RESIGN',
 };
-
-/**
- * Use firestore
- * see https://github.com/grahamearley/FirestoreGoogleAppsScript
- */
-function retrieveSomeData() {
-    var startTime = new Date().getTime();
-    var firestore = getFirestore();
-
-    const data = {
-      "name": "test3!"
-    };
-
-    // firestore.createDocument("FirstCollection/FirstDocument", data);
-    firestore.updateDocument("FirstCollection/FirstDocument", data);
-    var dataWithMetadata = firestore.getDocument("FirstCollection/FirstDocument");
-    var allDocuments = firestore.getDocuments("/games");
-    var text = JSON.stringify(allDocuments);
-    // var allDocumentsWithTest = firestore.query("FirstCollection").where("name", "==", "Test!").execute();
-    var totalTime = new Date().getTime() - startTime;
-    text += "time = " + totalTime;
-    return text;
-}
 
 /**
  * When a new player enters, they will either be the first or second player.
@@ -45,11 +28,7 @@ function retrieveSomeData() {
 function newPlayerEnters() {
     var firestore = getFirestore();
 
-    var openGames = firestore.query("/games").where("player2", "==", "").execute();
-    if (openGames.length > 1) {
-        throw new Error("Unexpected: more than one current open game found: " + JSON.stringify(openGames));
-    }
-
+    var openGames = getOpenGames(firestore);
     var user = getUserId();
     var players = getPlayersFromRow(openGames);
     var newPlayers;
@@ -70,13 +49,12 @@ function newPlayerEnters() {
     return newPlayers;
 }
 
-function checkForOpponent() {
-    var data = getGameData();
-
-    // last row always blanks, so take the one before
-    var lastRowNum = data.length - 2;
-    var lastRow = data[lastRowNum];
-    return getPlayersFromRow(lastRow);
+function getOpenGames(firestore) {
+    var openGames = firestore.query("/games").where("player2", "==", "").execute();
+    if (openGames.length > 1) {
+        throw new Error("Unexpected: more than one current open game found: " + JSON.stringify(openGames));
+    }
+    return openGames;
 }
 
 function isThisPlayerAlreadyWaiting(user, players) {
@@ -103,8 +81,12 @@ function playAsPlayer2(user, openGames, firestore) {
     game.lastPlayer = '';
 
     // the game is now officially started
-    var path = doc.name.substr(doc.name.indexOf("games/"));
+    var path = getPathFromDoc(doc);
     firestore.updateDocument(path, game);
+}
+
+function getPathFromDoc(doc) {
+    return doc.name.substr(doc.name.indexOf("games/"));
 }
 
 function createNewGame(user, firestore) {
@@ -121,22 +103,19 @@ function createNewGame(user, firestore) {
 }
 
 /**
- * If the player is alone at the table and leaves, then the row is removed.
+ * If the player is alone at the table and leaves, then the row (document) is removed.
  * If there is another player there, then this player loses the game.
+ * get the doc for gameID. If there is another player then this player loses, else delete that doc.
  */
-function playerLeaves() {
-     var sheet = getGamesSheet();
-     var data = getData(sheet);
-     var lastRowNum = data.length - 2;
-     var lastRow = data[lastRowNum];
+function playerLeaves(gameID) {
+     var firestore = getFirestore();
      var user = getUserId();
-     var players = getPlayersFromRow(lastRow);
 
      if (isThisPlayerAlreadyWaiting(user, players)) {
-         sheet.deleteRow(lastRowNum + 2);
+         // firestore.deleteDocument(getPathFromDoc(openGames[0]));
+         firestore.deleteDocument('games/' + gameID);
      }
 }
-
 
 function getGamesSheet() {
   const id = getConfig().gamesSheet;
