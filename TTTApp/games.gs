@@ -27,9 +27,17 @@ function getGameData() {
     return getData(sheet);
 }
 
+/**
+ * Use bigQuery
+ * to update data do something like
+ UPDATE sample_db.UserSessions
+ SET ip_address = REGEXP_REPLACE(ip_address, r"(\.[0-9]+)$", ".0")
+ WHERE TRUE
+ */
 function retrieveSomeData() {
     // Replace this value with the project ID listed in the Google Cloud Platform project.
     var projectId = 'onlinettt';
+    var startTime = new Date().getTime();
 
     var request = {
         query: 'SELECT * FROM games.games;'
@@ -38,9 +46,11 @@ function retrieveSomeData() {
     var jobId = queryResults.jobReference.jobId;
 
     // Check on status of the Query Job.
-    var sleepTimeMs = 200;
+    var sleepTimeMs = 50;
+    var queryTime = 0;
     while (!queryResults.jobComplete) {
         Utilities.sleep(sleepTimeMs);
+        queryTime += sleepTime;
         sleepTimeMs *= 2;
         queryResults = BigQuery.Jobs.getQueryResults(projectId, jobId);
     }
@@ -75,6 +85,9 @@ function retrieveSomeData() {
             text += "\n";
         }
     }
+    text += "\nqueryTime = " + queryTime;
+    var totalTime = (new Date().getTime() - startTime) / 1000;
+    text += "\ntotalTime = " + totalTime;
     return text;
 }
 
