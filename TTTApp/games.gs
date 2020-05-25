@@ -28,7 +28,7 @@ function newPlayerEnters() {
     var newPlayers;
 
     if (isThisPlayerAlreadyWaiting(user, players)) {
-        Logger.log("Player " + user + " is already waiting for a game...");
+        // Logger.log("Player " + user + " is already waiting for a game...");
         newPlayers = { gameId: players.gameId, player1: user };
     }
     else if (isAnotherPlayerWaiting(user, players)) {
@@ -86,8 +86,13 @@ function playAsPlayer2(user, openGames, firestore) {
     game.status = status.ACTIVE;
     game.lastPlayer = '';
 
+    var tempId = game.gameId;
+    delete game.gameId;
+
     // the game is now officially started
     firestore.updateDocument(getPathFromDoc(doc), game);
+
+    game.gameId = tempId;
 }
 
 function getPathFromDoc(doc) {

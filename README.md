@@ -14,5 +14,3 @@ Then, from the TTTApp directory within the cloned project directory, run the fol
 Now you are good to go. Deploy the web-app from your script on Google Drive.
 Make changes locally (in IntelliJ for example), do "clasp push", and refresh the deployed app script page to see the change. 
 Do git commit, push, and create pull requests through Github when you have a feature or fix to contribute.
-
-The very first time you need to run, set the id of the configuration spreadsheet in config.js (see comment there).

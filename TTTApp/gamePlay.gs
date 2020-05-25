@@ -1,7 +1,7 @@
 /** back-end handling of player board logic */
 
 /**
- * Set the symbol in the sheet in the board data column,
+ * Set the symbol in the sheet in database,
  * and set the lastPlayer to move value as well (from playersSymbol).
  * return { status, winningPositions, boardData, nextPlayer }
  */
@@ -60,15 +60,15 @@ function getCurrentGameBoard(gameId) {
 function unitTests() {
     var state = null;
     state = determineNewBoardState('X', 0, '_O_XXXO_O');
-    Logger.log(JSON.stringify(state));  // X_WON
+    //Logger.log(JSON.stringify(state));  // X_WON
     state = determineNewBoardState('O', 1, 'X_OXOXOOO');
-    Logger.log(JSON.stringify(state));  // O_WON
+    //Logger.log(JSON.stringify(state));  // O_WON
     state = determineNewBoardState('O', 2, 'XO_OXXOXO');
-    Logger.log(JSON.stringify(state));  // TIE
+    //Logger.log(JSON.stringify(state));  // TIE
     state = determineNewBoardState('O', 2, 'X_O_X_O_O');
-    Logger.log(JSON.stringify(state));  // ACTIVE
+    //Logger.log(JSON.stringify(state));  // ACTIVE
     state = determineNewBoardState('O', 4, 'X_O_X_O_O');
-    Logger.log(JSON.stringify(state));  // ERROR
+    //Logger.log(JSON.stringify(state));  // ERROR
 }
 
 /**
