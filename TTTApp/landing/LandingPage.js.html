@@ -58,10 +58,10 @@
       quitButton.disabled = !quitButton.disabled;
   }
 
-  function leaveGame(gameID) {
+  function leaveGame(gameId) {
       google.script.run
         .withFailureHandler(showError)
-        .playerLeaves(gameID);
+        .playerLeaves(gameId);
 
       toggleButtons();
       thisPlayersMove = false;
@@ -72,6 +72,7 @@
    * Either the other player has not yet entered, or we are the second player and should start game immediately.
    */
   function waitForOpponent(players) {
+      console.log("waitingForOpp players = " + JSON.stringify(players));
       if (players.player2) {
           gameStarted(players);
       }
@@ -79,7 +80,7 @@
           google.script.run
               .withSuccessHandler(waitForOpponent)
               .withFailureHandler(showError)
-              .checkForOpponent();
+              .checkForOpponent(players.gameId);
       }
   }
 
