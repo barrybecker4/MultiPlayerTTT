@@ -1,4 +1,4 @@
-
+// Allowed game status
 var status = {
     PENDING: 'PENDING',
     ACTIVE: 'ACTIVE',
@@ -9,69 +9,52 @@ var status = {
     O_BY_RESIGN: 'O_BY_RESIGN',
 };
 
-function getGamesSheet() {
-  const id = getConfig().gamesSheet;
-  return SpreadsheetApp.openById(id).getActiveSheet();
-}
-
-/**
- * @return the data in the specified sheet, excluding the initial header row.
- * Rows will be indexed starting at 0. The last row has all blank values.
- */
-function getData(sheet) {
-  return sheet.getSheetValues(2, 1, sheet.getLastRow(), sheet.getLastColumn());
-}
-
-function getGameData() {
-    var sheet = getGamesSheet();
-    return getData(sheet);
-}
-
 /**
  * When a new player enters, they will either be the first or second player.
  * These steps are performed:
- * - If last row contains this player as player1,
+ * - If there exists a row (document) that contains this player as player1,
  *   and has no second player, then do nothing else (as they are already waiting).
- * - If last row contains player1 (not == this player) and has no second player, then add this player as second player,
+ * - If there is a that row contains player1 (not == this player) and has no second player, then add this player as second player,
  *   and set the game status to "active". It has officially started.
- * - If last row contains player1 and player2 already, then it is an active or finished game,
- *   so create a new row and add this player as player 1 and set the status to "pending".
+ * - If are no rows with missing player2, then create a new row (document)
+ *   and add this player as player 1 and set the status to "pending".
  */
 function newPlayerEnters() {
-  var sheet = getGamesSheet();
-  var data = getData(sheet);
+    var firestore = getFirestore();
 
-  // The last row is always blanks, so take the one before.
-  var lastRowNum = data.length - 2;
-  var lastRow = lastRowNum >= 0 ? data[lastRowNum] : null;
+    var openGames = getOpenGames(firestore);
+    var user = getUserId();
+    var players = getPlayersFromRow(openGames);
+    var newPlayers;
 
-  var user = getUserId();
-  var players = getPlayersFromRow(lastRow);
-  var newPlayers;
-
-  if (isThisPlayerAlreadyWaiting(user, players)) {
-      Logger.log("Player " + user + " is already waiting for a game...");
-      newPlayers = { player1: user };
-  }
-  else if (isAnotherPlayerWaiting(user, players)) {
-      playAsPlayer2(user, sheet);
-      newPlayers = { gameId: players.gameId, player1: players.player1, player2: user };
-  }
-  else if (noPlayersWaiting(players, lastRowNum)) {
-      createNewGame(user, lastRowNum, sheet);
-      newPlayers = { player1: user };
-  }
-  else throw new Error("Unexpected case");
-  return newPlayers;
+    if (isThisPlayerAlreadyWaiting(user, players)) {
+        // Logger.log("Player " + user + " is already waiting for a game...");
+        newPlayers = { gameId: players.gameId, player1: user };
+    }
+    else if (isAnotherPlayerWaiting(user, players)) {
+        playAsPlayer2(user, openGames, firestore);
+        newPlayers = { gameId: players.gameId, player1: players.player1, player2: user };
+    }
+    else if (!players) {
+        var newGameDoc = createNewGame(user, firestore);
+        newPlayers = { gameId: getGameIdFromDoc(newGameDoc), player1: user };
+    }
+    else throw new Error("Unexpected case");
+    return newPlayers;
 }
 
-function checkForOpponent() {
-    var data = getGameData();
+function checkForOpponent(gameId) {
+    var firestore = getFirestore();
+    var doc = getGameById(gameId, firestore);
+    return getPlayersFromRow([doc]);
+}
 
-    // last row always blanks, so take the one before
-    var lastRowNum = data.length - 2;
-    var lastRow = data[lastRowNum];
-    return getPlayersFromRow(lastRow);
+function getOpenGames(firestore) {
+    var openGames = firestore.query("/games").where("player2", "==", "").execute();
+    if (openGames.length > 1) {
+        throw new Error("Unexpected: more than one current open game found: " + JSON.stringify(openGames));
+    }
+    return openGames;
 }
 
 function isThisPlayerAlreadyWaiting(user, players) {
@@ -82,82 +65,81 @@ function isAnotherPlayerWaiting(user, players) {
     return players && players.player1 && players.player1 != user && !players.player2;
 }
 
-function noPlayersWaiting(players, lastRowNum) {
-    var emptyTable = lastRowNum == -1 && !players;
-    return emptyTable || players && (players.player1 && players.player2);
+function noPlayersWaiting(players, openGames) {
+    return openGames.length == 0 || players && (players.player1 && players.player2);
 }
 
 function getPlayersFromRow(row) {
-    return row ? {gameId: row[getGameIdCol()], player1: row[getPlayer1Col()], player2: row[getPlayer2Col()] } : null;
-}
-
-function playAsPlayer2(user, sheet) {
-  var lastRow = sheet.getLastRow();
-  var col = getPlayer2Col() + 1;
-
-  // the game is now officially started
-  sheet.getRange(lastRow, col, 1, 3)
-      .setValues([[user, '', status.ACTIVE]]);
-}
-
-function createNewGame(user, lastRowNum, sheet) {
-    var lastRow = sheet.getLastRow();
-    var players = getPlayersFromRow(lastRow);
-    sheet.getRange(lastRow + 1, getGameIdCol() + 1, 1, sheet.getLastColumn())
-        .setValues([[lastRow + 1, user, '', '', status.PENDING, '_________']]);
-}
-
-/**
- * Get all paired players. Just listing them from the table. This just for debugging
- *
-function getPairedPlayers() {
-    var pairedPlayersList = [];
-
-    var cellData = getGameData();
-    // Sheets.Spreadsheets.Values.get(spreadsheetId, range);
-
-    var row = null;
-    for (var i = 0; i < cellData.length - 1; i++) {
-        row = cellData[i];
-        var pair = [row[getPlayer1Col()], row[getPlayer2Col()]];
-        pairedPlayersList.push(pair);
+    var players = null;
+    if (row && row.length == 1) {
+        players = row[0].fields;
+        players.gameId = getGameIdFromDoc(row[0]);
     }
+    return players;
+}
 
-    return pairedPlayersList;
-}*/
+function playAsPlayer2(user, openGames, firestore) {
+    var doc = openGames[0];
+    var game = doc.fields;
+
+    game.player2 = user;
+    game.status = status.ACTIVE;
+    game.lastPlayer = '';
+
+    var tempId = game.gameId;
+    delete game.gameId;
+
+    // the game is now officially started
+    firestore.updateDocument(getPathFromDoc(doc), game);
+
+    game.gameId = tempId;
+}
+
+function getPathFromDoc(doc) {
+    return doc.name.substr(doc.name.indexOf("games/"));
+}
+
+function getGameIdFromDoc(doc) {
+    return doc.name.substr(doc.name.indexOf("games/") + 6);
+}
 
 /**
- * If the player is alone at the table and leaves, then the row is removed.
- * If there is another player there, then this player loses the game.
+ * return new game doc. The gameId is "name" and the game info is "fields"
  */
-function playerLeaves() {
-     var sheet = getGamesSheet();
-     var data = getData(sheet);
-     var lastRowNum = data.length - 2;
-     var lastRow = data[lastRowNum];
-     var user = getUserId();
-     var players = getPlayersFromRow(lastRow);
+function createNewGame(user, firestore) {
+    const newGame = {
+        player1: user,
+        player2: '',
+        lastPlayer: '',
+        status: status.PENDING,
+        board: '_________'
+    };
 
-     if (isThisPlayerAlreadyWaiting(user, players)) {
-         sheet.deleteRow(lastRowNum + 2);
-     }
+    // creates new row (doc) with generated random ID.
+    return firestore.createDocument("/games", newGame);
 }
 
-function getGameIdCol() {
-  return 0;
+/**
+ * If the player is alone at the table and leaves, then the row (document) is removed.
+ * If there is another player there, then this player loses the game.
+ * get the doc for gameId. If there is another player then this player loses, else delete that doc.
+ */
+function playerLeaves(gameId) {
+    var firestore = getFirestore();
+    var user = getUserId();
+
+    var doc = getGameById(gameId, firestore);
+    var players = getPlayersFromRow([doc]);
+
+    if (isThisPlayerAlreadyWaiting(user, players)) {
+        firestore.deleteDocument('games/' + gameId);
+    } else {
+        var game = doc.fields;
+        game.status = game.player1 == user ? status.O_BY_RESIGN : status.X_BY_RESIGN;
+        firestore.updateDocument(getPathFromDoc(doc), game);
+    }
 }
-function getPlayer1Col() {
-  return 1;
-}
-function getPlayer2Col() {
-  return 2;
-}
-function getLastPlayerCol() {
-  return 3;
-}
-function getStatusCol() {
-  return 4;
-}
-function getBoardCol() {
-  return 5;
+
+function getGameById(gameId, firestore) {
+    return firestore.getDocument('games/' + gameId);
 }

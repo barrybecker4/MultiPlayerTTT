@@ -1,21 +1,25 @@
 /** back-end handling of player board logic */
 
-
 /**
- * Set the symbol in the sheet in the board data column,
+ * Set the symbol in the sheet in database,
  * and set the lastPlayer to move value as well (from playersSymbol).
  * return { status, winningPositions, boardData, nextPlayer }
  */
 function doPlayerMove(gameId, playersSymbol, cellPos) {
-    var sheet = getGamesSheet();
+    var firestore = getFirestore();
 
-    var gameRange = sheet.getRange(gameId, getLastPlayerCol() + 1, 1, 3);
-    var gameData = gameRange.getValues()[0];
-    var boardData = gameData[2];
+    var doc = getGameById(gameId, firestore);
+    var game = doc.fields;
 
-    var state = determineNewBoardState(playersSymbol, cellPos, boardData);
+    var state = determineNewBoardState(playersSymbol, cellPos, game.board);
 
-    gameRange.setValues([[playersSymbol, state.status, state.boardData]]);
+    game.status = state.status;
+    game.lastPlayer = playersSymbol;
+    game.board = state.boardData;
+
+    // the game is now officially started
+    firestore.updateDocument(getPathFromDoc(doc), game);
+
     return state;
 }
 
@@ -23,50 +27,48 @@ function doPlayerMove(gameId, playersSymbol, cellPos) {
  * The player playerSymbol quits. Update state in sheet.
  */
 function doPlayerQuits(gameId, playersSymbol) {
-    var sheet = getGamesSheet();
-    var gameRange = sheet.getRange(gameId, getLastPlayerCol() + 1, 1, 2);
+    var firestore = getFirestore();
 
-    var newStatus = playersSymbol == 'X' ? status.O_BY_RESIGN : status.X_BY_RESIGN;
-    gameRange.setValues([[playersSymbol, newStatus]]);
+    var doc = getGameById(gameId, firestore);
+    var game = doc.fields;
+
+    game.lastPlayer = playersSymbol;
+    game.status = playersSymbol == 'X' ? status.O_BY_RESIGN : status.X_BY_RESIGN;
+
+    firestore.updateDocument(getPathFromDoc(doc), game);
 }
 
 /**
  * @return info about the game in the form { nextPlayer: X or O, board: String, status }
  */
 function getCurrentGameBoard(gameId) {
+    var firestore = getFirestore();
 
-   var sheet = getGamesSheet();
-   var gameData = sheet.getSheetValues(gameId, 1, gameId + 2, sheet.getLastColumn())[0];
+    var doc = getGameById(gameId, firestore);
+    var game = doc.fields;
+    var nextPlayerToMove = game.lastPlayer == 'X' ? 'O' : 'X';
 
-   // get lastPlayer from sheet
-   var lastPlayerToMove = gameData[getLastPlayerCol()];
-
-   // get the string representing the board from the sheet
-   var boardData = gameData[getBoardCol()];
-   var gameStatus = gameData[getStatusCol()];
-
-   var nextPlayerToMove = lastPlayerToMove == 'X' ? 'O' : 'X';
-
-   return {
-       nextPlayer: nextPlayerToMove,
-       boardData: boardData,
-       status: gameStatus,
-   };
+    return {
+        gameId: gameId,
+        nextPlayer: nextPlayerToMove,
+        boardData: game.board,
+        status: game.status,
+    };
 }
 
 /** for testing only */
 function unitTests() {
     var state = null;
-    state = determineBoardState('X', 0, '_O_XXXO_O');
-    Logger.log(JSON.stringify(state));  // X_WON
-    state = determineBoardState('O', 1, 'X_OXOXOOO');
-    Logger.log(JSON.stringify(state));  // O_WON
-    state = determineBoardState('O', 2, 'XO_OXXOXO');
-    Logger.log(JSON.stringify(state));  // TIE
-    state = determineBoardState('O', 2, 'X_O_X_O_O');
-    Logger.log(JSON.stringify(state));  // ACTIVE
-    state = determineBoardState('O', 4, 'X_O_X_O_O');
-    Logger.log(JSON.stringify(state));  // ERROR
+    state = determineNewBoardState('X', 0, '_O_XXXO_O');
+    //Logger.log(JSON.stringify(state));  // X_WON
+    state = determineNewBoardState('O', 1, 'X_OXOXOOO');
+    //Logger.log(JSON.stringify(state));  // O_WON
+    state = determineNewBoardState('O', 2, 'XO_OXXOXO');
+    //Logger.log(JSON.stringify(state));  // TIE
+    state = determineNewBoardState('O', 2, 'X_O_X_O_O');
+    //Logger.log(JSON.stringify(state));  // ACTIVE
+    state = determineNewBoardState('O', 4, 'X_O_X_O_O');
+    //Logger.log(JSON.stringify(state));  // ERROR
 }
 
 /**
@@ -74,9 +76,10 @@ function unitTests() {
  *  { status: boardStatus, winningPositions: <[p1, p2, p4] | null if none> } // boardId, board, nextPlayer
  */
 function determineNewBoardState(playersSymbol, cellPos, boardData) {
+
     if (boardData.charAt(cellPos) != '_') {
         // It's a bug if this happens
-        throw new Error('SERVER ERROR: Cannot play in occupied position!');
+        throw new Error('SERVER ERROR: Cannot play in occupied position (' + boardData.charAt(cellPos) + ')!');
     }
     var board = boardData.substr(0, cellPos) + playersSymbol + boardData.substr(cellPos + 1);
     var winningPositions = checkRows(board) || checkColumns(board) || checkDiagonals(board);

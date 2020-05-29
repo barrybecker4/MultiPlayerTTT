@@ -8,27 +8,29 @@
    * Run initializations on page load.
    */
    window.onload = function() {
-       initialize();
+       initializeButtons();
    };
 
    window.onbeforeunload = function () {
-       return "are you sure you want to leave?";
+       return "Are you sure you want to leave?";
    };
 
-   function initialize() {
-       initializeButtons();
-   }
-
   function initializeButtons() {
-    getPlayButton().addEventListener("click", function(){
-       enterGame();
-    });
+      getPlayButton().addEventListener("click", onPlayClicked);
 
-    const quitButton = getQuitButton();
-    quitButton.disabled = true;
-    quitButton.addEventListener("click", function(){
+      const quitButton = getQuitButton();
+      quitButton.disabled = true;
+      quitButton.addEventListener("click", onQuitClicked);
+  }
+
+  function onPlayClicked() {
+      playSound();
+      enterGame();
+  }
+
+  function onQuitClicked() {
+      playSound();
       playerQuits();
-    });
   }
 
   function enterGame() {
@@ -46,6 +48,9 @@
           playerQuitsPlaying();
       } else {
           getDirectionsEl().textContent = 'You quit before the game even started!';
+          google.script.run
+            .withFailureHandler(showError)
+            .playerLeaves();
           toggleButtons();
       }
   }
@@ -58,10 +63,7 @@
       quitButton.disabled = !quitButton.disabled;
   }
 
-  function leaveGame() {
-      google.script.run
-        .withFailureHandler(showError)
-        .playerLeaves();
+  function endGame(gameId) {
 
       toggleButtons();
       thisPlayersMove = false;
@@ -72,6 +74,7 @@
    * Either the other player has not yet entered, or we are the second player and should start game immediately.
    */
   function waitForOpponent(players) {
+      console.log("waitingForOpp players = " + JSON.stringify(players));
       if (players.player2) {
           gameStarted(players);
       }
@@ -79,7 +82,7 @@
           google.script.run
               .withSuccessHandler(waitForOpponent)
               .withFailureHandler(showError)
-              .checkForOpponent();
+              .checkForOpponent(players.gameId);
       }
   }
 
@@ -105,11 +108,16 @@
   }
 
   function getPlayButton() {
-    return document.querySelector("#play");
+      return document.querySelector("#play");
   }
 
   function getQuitButton() {
-    return document.querySelector("#quit");
+      return document.querySelector("#quit");
+  }
+
+  function playSound() {
+      var sound = document.getElementById("audio");
+      sound.play();
   }
 
 </script>
