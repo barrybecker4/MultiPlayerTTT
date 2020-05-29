@@ -8,27 +8,29 @@
    * Run initializations on page load.
    */
    window.onload = function() {
-       initialize();
+       initializeButtons();
    };
 
    window.onbeforeunload = function () {
        return "Are you sure you want to leave?";
    };
 
-   function initialize() {
-       initializeButtons();
-   }
-
   function initializeButtons() {
-    getPlayButton().addEventListener("click", function(){
-       enterGame();
-    });
+      getPlayButton().addEventListener("click", onPlayClicked);
 
-    const quitButton = getQuitButton();
-    quitButton.disabled = true;
-    quitButton.addEventListener("click", function(){
+      const quitButton = getQuitButton();
+      quitButton.disabled = true;
+      quitButton.addEventListener("click", onQuitClicked);
+  }
+
+  function onPlayClicked() {
+      playSound();
+      enterGame();
+  }
+
+  function onQuitClicked() {
+      playSound();
       playerQuits();
-    });
   }
 
   function enterGame() {
@@ -58,10 +60,7 @@
       quitButton.disabled = !quitButton.disabled;
   }
 
-  function leaveGame(gameId) {
-      google.script.run
-        .withFailureHandler(showError)
-        .playerLeaves(gameId);
+  function endGame(gameId) {
 
       toggleButtons();
       thisPlayersMove = false;
@@ -106,11 +105,16 @@
   }
 
   function getPlayButton() {
-    return document.querySelector("#play");
+      return document.querySelector("#play");
   }
 
   function getQuitButton() {
-    return document.querySelector("#quit");
+      return document.querySelector("#quit");
+  }
+
+  function playSound() {
+      var sound = document.getElementById("audio");
+      sound.play();
   }
 
 </script>
