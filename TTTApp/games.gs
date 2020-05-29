@@ -125,20 +125,19 @@ function createNewGame(user, firestore) {
  * get the doc for gameId. If there is another player then this player loses, else delete that doc.
  */
 function playerLeaves(gameId) {
-     var firestore = getFirestore();
-     var user = getUserId();
+    var firestore = getFirestore();
+    var user = getUserId();
 
-     var doc = getGameById(gameId, firestore);
-     var players = getPlayersFromRow([doc]);
+    var doc = getGameById(gameId, firestore);
+    var players = getPlayersFromRow([doc]);
 
-     if (isThisPlayerAlreadyWaiting(user, players)) {
-         // firestore.deleteDocument(getPathFromDoc(openGames[0]));
-         firestore.deleteDocument('games/' + gameId);
-     } else {
-         var game = doc.fields;
-         game.status = game.player1 == user ? status.O_BY_RESIGN : status.X_BY_RESIGN;
-         firestore.updateDocument(getPathFromDoc(doc), game);
-     }
+    if (isThisPlayerAlreadyWaiting(user, players)) {
+        firestore.deleteDocument('games/' + gameId);
+    } else {
+        var game = doc.fields;
+        game.status = game.player1 == user ? status.O_BY_RESIGN : status.X_BY_RESIGN;
+        firestore.updateDocument(getPathFromDoc(doc), game);
+    }
 }
 
 function getGameById(gameId, firestore) {

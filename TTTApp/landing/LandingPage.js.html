@@ -48,6 +48,9 @@
           playerQuitsPlaying();
       } else {
           getDirectionsEl().textContent = 'You quit before the game even started!';
+          google.script.run
+            .withFailureHandler(showError)
+            .playerLeaves();
           toggleButtons();
       }
   }
