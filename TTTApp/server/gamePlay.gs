@@ -6,9 +6,7 @@
  * return { status, winningPositions, boardData, nextPlayer }
  */
 function doPlayerMove(gameId, playersSymbol, cellPos) {
-    var firestore = getFirestore();
-
-    var doc = getGameById(gameId, firestore);
+    var doc = gamesTable.getGameById(gameId);
     var game = doc.fields;
 
     var state = determineNewBoardState(playersSymbol, cellPos, game.board);
@@ -18,8 +16,7 @@ function doPlayerMove(gameId, playersSymbol, cellPos) {
     game.board = state.boardData;
 
     // the game is now officially started
-    firestore.updateDocument(getPathFromDoc(doc), game);
-
+    gamesTable.updateGame(doc);
     return state;
 }
 
@@ -27,24 +24,20 @@ function doPlayerMove(gameId, playersSymbol, cellPos) {
  * The player playerSymbol quits. Update state in sheet.
  */
 function doPlayerQuits(gameId, playersSymbol) {
-    var firestore = getFirestore();
-
-    var doc = getGameById(gameId, firestore);
+    var doc = gamesTable.getGameById(gameId);
     var game = doc.fields;
 
     game.lastPlayer = playersSymbol;
     game.status = playersSymbol == 'X' ? status.O_BY_RESIGN : status.X_BY_RESIGN;
 
-    firestore.updateDocument(getPathFromDoc(doc), game);
+    gamesTable.updateGame(doc);
 }
 
 /**
  * @return info about the game in the form { nextPlayer: X or O, board: String, status }
  */
 function getCurrentGameBoard(gameId) {
-    var firestore = getFirestore();
-
-    var doc = getGameById(gameId, firestore);
+    var doc = gamesTable.getGameById(gameId);
     var game = doc.fields;
     var nextPlayerToMove = game.lastPlayer == 'X' ? 'O' : 'X';
 

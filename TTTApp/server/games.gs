@@ -20,9 +20,7 @@ var status = {
  *   and add this player as player 1 and set the status to "pending".
  */
 function newPlayerEnters() {
-    var firestore = getFirestore();
-
-    var openGames = getOpenGames(firestore);
+    var openGames = gamesTable.getOpenGames();
     var user = getUserId();
     var players = getPlayersFromRow(openGames);
     var newPlayers;
@@ -32,29 +30,20 @@ function newPlayerEnters() {
         newPlayers = { gameId: players.gameId, player1: user };
     }
     else if (isAnotherPlayerWaiting(user, players)) {
-        playAsPlayer2(user, openGames, firestore);
+        playAsPlayer2(user, openGames);
         newPlayers = { gameId: players.gameId, player1: players.player1, player2: user };
     }
     else if (!players) {
-        var newGameDoc = createNewGame(user, firestore);
-        newPlayers = { gameId: getGameIdFromDoc(newGameDoc), player1: user };
+        var newGameDoc = createNewGame(user);
+        newPlayers = { gameId: gamesTable.getGameIdFromDoc(newGameDoc), player1: user };
     }
     else throw new Error("Unexpected case");
     return newPlayers;
 }
 
 function checkForOpponent(gameId) {
-    var firestore = getFirestore();
-    var doc = getGameById(gameId, firestore);
+    var doc = gamesTable.getGameById(gameId);
     return getPlayersFromRow([doc]);
-}
-
-function getOpenGames(firestore) {
-    var openGames = firestore.query("/games").where("player2", "==", "").execute();
-    if (openGames.length > 1) {
-        throw new Error("Unexpected: more than one current open game found: " + JSON.stringify(openGames));
-    }
-    return openGames;
 }
 
 function isThisPlayerAlreadyWaiting(user, players) {
@@ -73,12 +62,12 @@ function getPlayersFromRow(row) {
     var players = null;
     if (row && row.length == 1) {
         players = row[0].fields;
-        players.gameId = getGameIdFromDoc(row[0]);
+        players.gameId = gamesTable.getGameIdFromDoc(row[0]);
     }
     return players;
 }
 
-function playAsPlayer2(user, openGames, firestore) {
+function playAsPlayer2(user, openGames) {
     var doc = openGames[0];
     var game = doc.fields;
 
@@ -86,27 +75,19 @@ function playAsPlayer2(user, openGames, firestore) {
     game.status = status.ACTIVE;
     game.lastPlayer = '';
 
-    var tempId = game.gameId;
-    delete game.gameId;
+    //var tempId = game.gameId;
+    //delete game.gameId;
 
     // the game is now officially started
-    firestore.updateDocument(getPathFromDoc(doc), game);
+    gamesTable.updateDoc(doc);
 
-    game.gameId = tempId;
-}
-
-function getPathFromDoc(doc) {
-    return doc.name.substr(doc.name.indexOf("games/"));
-}
-
-function getGameIdFromDoc(doc) {
-    return doc.name.substr(doc.name.indexOf("games/") + 6);
+    //game.gameId = tempId;
 }
 
 /**
  * return new game doc. The gameId is "name" and the game info is "fields"
  */
-function createNewGame(user, firestore) {
+function createNewGame(user) {
     const newGame = {
         player1: user,
         player2: '',
@@ -116,7 +97,7 @@ function createNewGame(user, firestore) {
     };
 
     // creates new row (doc) with generated random ID.
-    return firestore.createDocument("/games", newGame);
+    return gamesTable.createGame(newGame);
 }
 
 /**
@@ -125,21 +106,16 @@ function createNewGame(user, firestore) {
  * get the doc for gameId. If there is another player then this player loses, else delete that doc.
  */
 function playerLeaves(gameId) {
-    var firestore = getFirestore();
     var user = getUserId();
 
-    var doc = getGameById(gameId, firestore);
+    var doc = gamesTable.getGameById(gameId);
     var players = getPlayersFromRow([doc]);
 
     if (isThisPlayerAlreadyWaiting(user, players)) {
-        firestore.deleteDocument('games/' + gameId);
+        gamesTable.deleteGame(gameId);
     } else {
         var game = doc.fields;
         game.status = game.player1 == user ? status.O_BY_RESIGN : status.X_BY_RESIGN;
-        firestore.updateDocument(getPathFromDoc(doc), game);
+        gamesTable.updateGame(doc);
     }
-}
-
-function getGameById(gameId, firestore) {
-    return firestore.getDocument('games/' + gameId);
 }
