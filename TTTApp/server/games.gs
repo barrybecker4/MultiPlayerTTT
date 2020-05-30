@@ -7,6 +7,8 @@ var status = {
     TIE: 'TIE',
     X_BY_RESIGN: 'X_BY_RESIGN',
     O_BY_RESIGN: 'O_BY_RESIGN',
+    X_BY_TIMEOUT: 'X_BY_TIMEOUT',
+    O_BY_TIMEOUT: 'O_BY_TIMEOUT',
 };
 
 /**

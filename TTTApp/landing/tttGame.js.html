@@ -1,4 +1,5 @@
 <script>
+    var moveTimer = null;
 
     /**
      * Dynamically create the TTT board. It will look like this:
@@ -59,6 +60,7 @@
      * Prevent this player from moving again until other player has moved.
      */
     function makeThisPlayersMoveAt(cellPos) {
+        clearInterval(moveTimer);
         thisPlayersMove = false; // prevents more play
 
         google.script.run
@@ -68,14 +70,22 @@
     }
 
     function playerQuitsPlaying() {
+        playerTerminates('_BY_RESIGN');
+    }
+
+    function playerTimesOut() {
+        playerTerminates('_BY_TIMEOUT');
+    }
+
+    function playerTerminates(statusSuffix) {
         var otherPlayer = getOtherPlayer();
-        console.log("thisP = " + thisPlayersSymbol + " is quitting.  other = " + otherPlayer);
+        clearInterval(moveTimer);
 
         google.script.run
             .withFailureHandler(showError)
-            .doPlayerQuits(thisGameId, thisPlayersSymbol);
+            .doPlayerTerminates(thisGameId, thisPlayersSymbol, statusSuffix);
 
-        updateIfGameOver(otherPlayer + '_BY_RESIGN');
+        updateIfGameOver(otherPlayer + statusSuffix);
     }
 
     /**
@@ -110,6 +120,7 @@
         if (gameData.nextPlayer == thisPlayersSymbol && gameData.status == 'ACTIVE') {
             thisPlayersMove = true;
             getDirectionsEl().textContent = "Your move, " + thisPlayersSymbol;
+            moveTimer = initiateMoveTimer(10);
         } else {
             updateIfGameOver(gameData.status);
         }
@@ -121,6 +132,27 @@
             var cell = document.querySelector("#cell" + i);
             var content = board.charAt(i);
             cell.textContent = content == '_' ? ' ' : content;
+        }
+    }
+
+    /**
+     * If the player does not move before secondsRemaining reaches 0, then they lose on time
+     */
+    function initiateMoveTimer(secondsRemaining) {
+        console.log("timer initiated");
+        var timer = setInterval(decrementTime, 1000);
+        return timer;
+
+        function decrementTime() {
+            secondsRemaining -= 1;
+            console.log("time remaining = " + secondsRemaining);
+            playTickSound();
+            getDirectionsEl().textContent = "Make your move in " + secondsRemaining + " seconds.";
+            if (secondsRemaining <= 0) {
+                getDirectionsEl().textContent = "You (" + thisPlayersSymbol + ") ran out of time!";
+                clearInterval(timer);
+                playerTimesOut();
+            }
         }
     }
 
@@ -136,12 +168,21 @@
                     "You won!!" :
                     "Sorry you lose. " + winningPlayer + " won!";
             }
-            else if (status.indexOf('_BY_RESIGN') >= 0) {
+            else if (status.indexOf('_BY_RESIGN') >= 0 || status.indexOf('_BY_TIMEOUT') >= 0) {
                 var winningPlayer = status.charAt(0);
                 var losingPlayer = winningPlayer == 'X' ? 'O' : 'X';
-                directions = (winningPlayer == thisPlayersSymbol) ?
-                    "You (" + winningPlayer + ") win because the other player resigned." :
-                    "You (" + losingPlayer + ") quit, so you lose!";
+                if (status.indexOf('_BY_RESIGN') >= 0) {
+                    directions = (winningPlayer == thisPlayersSymbol) ?
+                        "You (" + winningPlayer + ") win because the other player resigned." :
+                        "You (" + losingPlayer + ") quit, so you lose!";
+                } else {
+                    directions = (winningPlayer == thisPlayersSymbol) ?
+                        "You (" + winningPlayer + ") win because the other player ran out of time." :
+                        "You (" + losingPlayer + ") lose! You ran out of time.";
+                }
+            }
+            else {
+                throw new Error("Unexpected status = " + status);
             }
             thisPlayersSymbol = null;
             thisPlayersMove = false;
@@ -157,5 +198,10 @@
     function getBoardDiv() {
         return document.querySelector("#board");
     }
+
+    function playTickSound() {
+      var sound = document.getElementById("audio-tick");
+      sound.play();
+  }
 
 </script>

@@ -21,14 +21,14 @@ function doPlayerMove(gameId, playersSymbol, cellPos) {
 }
 
 /**
- * The player playerSymbol quits. Update state in sheet.
+ * The player playerSymbol quits or times out. Update state in sheet.
  */
-function doPlayerQuits(gameId, playersSymbol) {
+function doPlayerTerminates(gameId, playersSymbol, statusSuffix) {
     var doc = gamesTable.getGameById(gameId);
     var game = doc.fields;
 
     game.lastPlayer = playersSymbol;
-    game.status = playersSymbol == 'X' ? status.O_BY_RESIGN : status.X_BY_RESIGN;
+    game.status = getOtherPlayer(playersSymbol) + statusSuffix;
 
     gamesTable.updateGame(doc);
 }
@@ -119,4 +119,8 @@ function checkDiagonals(boardData) {
 function checkTriple(triple, board) {
     var first = board.charAt(triple[0]);
     return (first != '_' && first == board[triple[1]] && first == board[triple[2]]) ? triple : null;
+}
+
+function getOtherPlayer(symbol) {
+    return symbol == 'X' ? 'O' : 'X';
 }

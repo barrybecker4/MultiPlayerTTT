@@ -24,12 +24,12 @@
   }
 
   function onPlayClicked() {
-      playSound();
+      playButtonSound();
       enterGame();
   }
 
   function onQuitClicked() {
-      playSound();
+      playButtonSound();
       playerQuits();
   }
 
@@ -115,8 +115,8 @@
       return document.querySelector("#quit");
   }
 
-  function playSound() {
-      var sound = document.getElementById("audio");
+  function playButtonSound() {
+      var sound = document.getElementById("audio-button");
       sound.play();
   }
 
