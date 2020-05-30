@@ -75,13 +75,14 @@ function playAsPlayer2(user, openGames) {
     game.status = status.ACTIVE;
     game.lastPlayer = '';
 
-    //var tempId = game.gameId;
-    //delete game.gameId;
+    // no need to store the id, but still preserve it
+    var tempId = game.gameId;
+    delete game.gameId;
 
     // the game is now officially started
-    gamesTable.updateDoc(doc);
+    gamesTable.updateGame(doc);
 
-    //game.gameId = tempId;
+    game.gameId = tempId;
 }
 
 /**

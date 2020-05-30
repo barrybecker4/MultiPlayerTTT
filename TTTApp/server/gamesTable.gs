@@ -1,9 +1,8 @@
 // encapsulate access to the persistent "games" table that contains the current state of all games.
-
 var gamesTable = getGamesTableAccessor();
 
 function getGamesTableAccessor() {
-    var firestore = getFirestore();
+    var firestore = getFirestore().getInstance();
     const GAMES_TABLE = "games";
 
     function getOpenGames() {
@@ -48,13 +47,13 @@ function getGamesTableAccessor() {
         return getPathFromDoc(doc).substr(GAMES_TABLE.length + 1);
     }
 
-    return Object.freeze({
+    return {
         createGame: createGame,
         updateGame: updateGame,
         deleteGame: deleteGame,
         getGameById: getGameById,
         getOpenGames: getOpenGames,
         getGameIdFromDoc: getGameIdFromDoc,
-    });
+    };
 
 }
