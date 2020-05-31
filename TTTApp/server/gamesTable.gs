@@ -47,6 +47,18 @@ function getGamesTableAccessor() {
         return getPathFromDoc(doc).substr(GAMES_TABLE.length + 1);
     }
 
+    function getGamesPlayedBy(players) {
+        var query = firestore.query('/' + GAMES_TABLE);
+
+        var p1 = players.player1;
+        var p2 = players.player2;
+
+        var history1 = query.where('player1', '==', p1).where('player2', '==', p2).execute();
+        var history2 = query.where('player1', '==', p2).where('player2', '==', p1).execute();
+
+        return history1.concat(history2);
+    }
+
     return {
         createGame: createGame,
         updateGame: updateGame,
@@ -54,6 +66,7 @@ function getGamesTableAccessor() {
         getGameById: getGameById,
         getOpenGames: getOpenGames,
         getGameIdFromDoc: getGameIdFromDoc,
+        getGamesPlayedBy: getGamesPlayedBy,
     };
 
 }

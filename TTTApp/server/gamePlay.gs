@@ -53,9 +53,9 @@ function getCurrentGameBoard(gameId) {
 function unitTests() {
     var state = null;
     state = determineNewBoardState('X', 0, '_O_XXXO_O');
-    //Logger.log(JSON.stringify(state));  // X_WON
+    //Logger.log(JSON.stringify(state));  // X_WIN
     state = determineNewBoardState('O', 1, 'X_OXOXOOO');
-    //Logger.log(JSON.stringify(state));  // O_WON
+    //Logger.log(JSON.stringify(state));  // O_WIN
     state = determineNewBoardState('O', 2, 'XO_OXXOXO');
     //Logger.log(JSON.stringify(state));  // TIE
     state = determineNewBoardState('O', 2, 'X_O_X_O_O');
@@ -77,7 +77,7 @@ function determineNewBoardState(playersSymbol, cellPos, boardData) {
     var board = boardData.substr(0, cellPos) + playersSymbol + boardData.substr(cellPos + 1);
     var winningPositions = checkRows(board) || checkColumns(board) || checkDiagonals(board);
     var isTie = !winningPositions && !hasEmptyPositions(board);
-    var theStatus = isTie ? status.TIE : (winningPositions ? board[winningPositions[0]] + '_WON' : status.ACTIVE);
+    var theStatus = isTie ? status.TIE : (winningPositions ? board[winningPositions[0]] + '_WIN' : status.ACTIVE);
 
     return {
         status: theStatus,

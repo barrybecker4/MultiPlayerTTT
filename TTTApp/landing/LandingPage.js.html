@@ -100,6 +100,11 @@
 
       getDirections1El().innerHTML = directions;
       initializeBoard();
+      showHistory(user, players);
+  }
+
+  function showHistory(user, players) {
+      getHistoryEl().innerHTML = "This is the <b>history</b> you have had with <b>user</b> \n" + JSON.stringify(players.history);
   }
 
   function getDirections1El() {
@@ -108,6 +113,10 @@
 
   function getDirections2El() {
       return document.querySelector("#directions2");
+  }
+
+  function getHistoryEl() {
+      return document.querySelector('#history');
   }
 
   function getPlayButton() {
