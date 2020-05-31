@@ -50,7 +50,7 @@
           getDirections1El().textContent = 'You quit before the game even started!';
           google.script.run
             .withFailureHandler(showError)
-            .playerLeaves();
+            .playerLeaves(thisGameId);
           toggleButtons();
       }
   }
@@ -75,6 +75,7 @@
    */
   function waitForOpponent(players) {
       console.log("waitingForOpp players = " + JSON.stringify(players));
+      thisGameId = players.gameId;
       if (players.player2) {
           gameStarted(players);
       }
