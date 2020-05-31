@@ -95,7 +95,7 @@
         redrawGameBoard(gameData);
         if (thisPlayersSymbol && !thisPlayersMove) {
             var otherPlayer = getOtherPlayer();
-            getDirectionsEl().textContent = "Waiting for " + otherPlayer + " to move...";
+            getDirections2El().textContent = "Waiting for " + otherPlayer + " to move...";
             console.log("recursive call polling for other player to move... ");
             // not sure why this does not always work on FireFox
             setTimeout(waitForOtherPlayerMove, 1000);
@@ -119,7 +119,7 @@
 
         if (gameData.nextPlayer == thisPlayersSymbol && gameData.status == 'ACTIVE') {
             thisPlayersMove = true;
-            getDirectionsEl().textContent = "Your move, " + thisPlayersSymbol;
+            getDirections2El().textContent = "Your move, " + thisPlayersSymbol;
             moveTimer = initiateMoveTimer(10);
         } else {
             updateIfGameOver(gameData.status);
@@ -147,9 +147,9 @@
             secondsRemaining -= 1;
             console.log("time remaining = " + secondsRemaining);
             playTickSound();
-            getDirectionsEl().textContent = "Make your move in " + secondsRemaining + " seconds.";
+            getDirections2El().textContent = "Make your move in " + secondsRemaining + " seconds.";
             if (secondsRemaining <= 0) {
-                getDirectionsEl().textContent = "You (" + thisPlayersSymbol + ") ran out of time!";
+                getDirections2El().textContent = "You (" + thisPlayersSymbol + ") ran out of time!";
                 clearInterval(timer);
                 playerTimesOut();
             }
@@ -186,7 +186,7 @@
             }
             thisPlayersSymbol = null;
             thisPlayersMove = false;
-            getDirectionsEl().textContent = directions;
+            getDirections2El().textContent = directions;
             endGame(thisGameId);
         }
     }
