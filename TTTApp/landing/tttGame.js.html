@@ -162,7 +162,7 @@
             if (status == 'TIE') {
                 directions = 'It was a tie!';
             }
-            else if (status.indexOf('_WON') >= 0) {
+            else if (status.indexOf('_WIN') >= 0) {
                 var winningPlayer = status.charAt(0);
                 directions = (winningPlayer == thisPlayersSymbol) ?
                     "You won!!" :
