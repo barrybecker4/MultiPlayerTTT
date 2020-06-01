@@ -1,176 +1,137 @@
 <script>
-  // Global variables for this player
-  var thisPlayersMove = false;   // When true, the player is allowed to move.
-  var thisPlayersSymbol = null;  // Will be either X or O when a game is ACTIVE
-  var thisGameId = null;         // unique ID of the current game (once it starts)
+// Global variables for this player
+var thisPlayersMove = false;   // When true, the player is allowed to move.
+var thisPlayersSymbol = null;  // Will be either X or O when a game is ACTIVE
+var thisGameId = null;         // unique ID of the current game (once it starts)
 
-  /**
-   * Run initializations on page load.
-   */
-   window.onload = function() {
-       initializeButtons();
-   };
+/**
+* Run initializations on page load.
+*/
+window.onload = function() {
+    initializeButtons();
+};
 
-   window.onbeforeunload = function () {
-       return "Are you sure you want to leave?";
-   };
+window.onbeforeunload = function () {
+    return "Are you sure you want to leave?";
+};
 
-  function initializeButtons() {
-      getPlayButton().addEventListener("click", onPlayClicked);
+function initializeButtons() {
+    getPlayButton().addEventListener("click", onPlayClicked);
 
-      const quitButton = getQuitButton();
-      quitButton.disabled = true;
-      quitButton.addEventListener("click", onQuitClicked);
-  }
+    const quitButton = getQuitButton();
+    quitButton.disabled = true;
+    quitButton.addEventListener("click", onQuitClicked);
+}
 
-  function onPlayClicked() {
-      playButtonSound();
-      enterGame();
-  }
+function onPlayClicked() {
+    playButtonSound();
+    enterGame();
+}
 
-  function onQuitClicked() {
-      playButtonSound();
-      playerQuits();
-  }
+function onQuitClicked() {
+    playButtonSound();
+    playerQuits();
+}
 
-  function enterGame() {
-      getDirections1El().textContent = 'Waiting for opponent...';
-      google.script.run
+function enterGame() {
+    getDirections1El().textContent = 'Waiting for opponent...';
+    google.script.run
         .withSuccessHandler(waitForOpponent)
         .withFailureHandler(showError)
         .newPlayerEnters();
 
-      toggleButtons();
-  }
+    toggleButtons();
+}
 
-  function playerQuits() {
-      if (thisPlayersSymbol) {
-          playerQuitsPlaying();
-      } else {
-          getDirections1El().textContent = 'You quit before the game even started!';
-          google.script.run
+function playerQuits() {
+    if (thisPlayersSymbol) {
+        playerQuitsPlaying();
+    } else {
+        getDirections1El().textContent = 'You quit before the game even started!';
+        google.script.run
+          .withFailureHandler(showError)
+          .playerLeaves(thisGameId);
+        toggleButtons();
+    }
+}
+
+function toggleButtons() {
+    var playButton = getPlayButton();
+    var quitButton = getQuitButton();
+    // console.log("togging buttons. quit disabled = " + quitButton.disabled);
+    playButton.disabled = !playButton.disabled;
+    quitButton.disabled = !quitButton.disabled;
+}
+
+function endGame(gameId) {
+    toggleButtons();
+    getDirections1El().textContent = '';
+    thisPlayersMove = false;
+    thisPlayersSymbol = null;
+}
+
+/**
+ * Either the other player has not yet entered, or we are the second player and should start game immediately.
+ */
+function waitForOpponent(players) {
+    console.log("waitingForOpp players = " + JSON.stringify(players));
+    thisGameId = players.gameId;
+    if (players.player2) {
+        gameStarted(players);
+    }
+    else {
+        google.script.run
+            .withSuccessHandler(waitForOpponent)
             .withFailureHandler(showError)
-            .playerLeaves(thisGameId);
-          toggleButtons();
-      }
-  }
+            .checkForOpponent(players.gameId);
+    }
+}
 
-  function toggleButtons() {
-      var playButton = getPlayButton();
-      var quitButton = getQuitButton();
-      // console.log("togging buttons. quit disabled = " + quitButton.disabled);
-      playButton.disabled = !playButton.disabled;
-      quitButton.disabled = !quitButton.disabled;
-  }
+function gameStarted(players) {
+    var user = document.querySelector("#userid").textContent;
 
-  function endGame(gameId) {
-      toggleButtons();
-      getDirections1El().textContent = '';
-      thisPlayersMove = false;
-      thisPlayersSymbol = null;
-  }
+    var isPlayerX = players.player1 == user;
+    thisPlayersSymbol = isPlayerX ? 'X' : 'O';
+    thisPlayersMove = isPlayerX;
+    thisGameId = players.gameId;
 
-  /**
-   * Either the other player has not yet entered, or we are the second player and should start game immediately.
-   */
-  function waitForOpponent(players) {
-      console.log("waitingForOpp players = " + JSON.stringify(players));
-      thisGameId = players.gameId;
-      if (players.player2) {
-          gameStarted(players);
-      }
-      else {
-          google.script.run
-              .withSuccessHandler(waitForOpponent)
-              .withFailureHandler(showError)
-              .checkForOpponent(players.gameId);
-      }
-  }
+    var directions = isPlayerX ?
+    "Found player for you to play. You will be playing X against <b>" + players.player2 + "</b>." :
+    "You will be playing O against <b>" + players.player1 + "</b>.";
 
-  function gameStarted(players) {
-      var user = document.querySelector("#userid").textContent;
+    getDirections1El().innerHTML = directions;
+    getDirections2El().innerHTML = '';
+    initializeBoard();
+    showHistory(user, players);
+}
 
-      var isPlayerX = players.player1 == user;
-      thisPlayersSymbol = isPlayerX ? 'X' : 'O';
-      thisPlayersMove = isPlayerX;
-      thisGameId = players.gameId;
+function showHistory(user, players) {
+    getHistoryEl().innerHTML = historyFormatter.formatHistory(user, players);
+}
 
-      var directions = isPlayerX ?
-        "Found player for you to play. You will be playing X against <b>" + players.player2 + "</b>." :
-        "You will be playing O against <b>" + players.player1 + "</b>.";
+function getDirections1El() {
+    return document.querySelector("#directions1");
+}
 
-      getDirections1El().innerHTML = directions;
-      getDirections2El().innerHTML = '';
-      initializeBoard();
-      showHistory(user, players);
-  }
+function getDirections2El() {
+    return document.querySelector("#directions2");
+}
 
-  function showHistory(user, players) {
-      getHistoryEl().innerHTML = formatHistory(user, players);
-  }
+function getHistoryEl() {
+    return document.querySelector('#history');
+}
 
-  /**
-   * Suppose you are barrybecker4 and playing X, then you should see:
-   *   You have played *joeSchmoe* 20 times in the past.
-   *   As player *X*, you won 5 (1 by resignation, 2 by timeout), lost 5 (2 by resignation), and tied 5 games.
-   *   As player *O*, you won 1, lost 4 (1 by timeout), and tied 1 game.
-   * Suppose you are barrybecker4 and playing O, then you should see the same thing.
-   *
-   * Suppose you are joeSchmoe and playing X, then you should see:
-   *   You have played *joeSchmoe* 20 times in the past.
-   *   As player *X*, you won 5 (1 by resignation, 2 by timeout), lost 5 (2 by resignation), and tied 5 games.
-   *   As player *O*, you won 1, lost 4 (1 by timeout), and tied 1 game.
-   * Suppose you are joeSchmoe and playing O, then you should see the same thing.
-   */
-  function formatHistory(user, players) {
-      var history = players.history;
-      var otherUser = (players.player1 == user) ? players.player2: players.player1;
-      if (history.totalEncounters == 0) {
-          return "This is the first time you are playing against <b>" + otherUser + "</b>.";
-      }
-      var text = "You have played <b>" + otherUser + "</b> " + history.totalEncounters + " times in the past.<br>";
+function getPlayButton() {
+    return document.querySelector("#play");
+}
 
-      text += (players.player1 == user) ?
-          formatWinLossResults(history.player1AsX, history.player2AsX, false) :
-          formatWinLossResults(history.player2AsX, history.player1AsX, true);
-      return text;
-  }
+function getQuitButton() {
+    return document.querySelector("#quit");
+}
 
-  function formatWinLossResults(playerXstats, playerOstats, invert) {
-      return invert?
-          formatResultLine('X', playerXstats.totalLosses, playerXstats.totalWins, playerXstats.totalTies)
-          + formatResultLine('O', playerOstats.totalLosses, playerOstats.totalWins, playerOstats.totalTies) :
-          formatResultLine('X', playerXstats.totalWins, playerXstats.totalLosses, playerXstats.totalTies)
-          + formatResultLine('O', playerOstats.totalWins, playerOstats.totalLosses, playerOstats.totalTies);
-  }
-
-  function formatResultLine(symbol, wins, losses, ties) {
-      return 'As player <b>' + symbol + '</b> you won ' + wins + ', lost ' + losses + ', and tied ' + ties + '.<br>';
-  }
-
-  function getDirections1El() {
-      return document.querySelector("#directions1");
-  }
-
-  function getDirections2El() {
-      return document.querySelector("#directions2");
-  }
-
-  function getHistoryEl() {
-      return document.querySelector('#history');
-  }
-
-  function getPlayButton() {
-      return document.querySelector("#play");
-  }
-
-  function getQuitButton() {
-      return document.querySelector("#quit");
-  }
-
-  function playButtonSound() {
-      var sound = document.getElementById("audio-button");
-      sound.play();
-  }
+function playButtonSound() {
+    var sound = document.getElementById("audio-button");
+    sound.play();
+}
 
 </script>

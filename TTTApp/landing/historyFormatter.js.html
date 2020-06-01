@@ -1,0 +1,73 @@
+<script>
+var historyFormatter = getHistoryFormatter();
+console.log("historyFormatter = " + historyFormatter);
+
+function getHistoryFormatter() {
+
+    /**
+     * Suppose you are barrybecker4 and playing X, then you should see:
+     *   You have played *joeSchmoe* 20 times in the past.
+     *   As player *X*, you won 5 (1 by resignation, 2 by timeout), lost 5 (2 by resignation), and tied 5 games.
+     *   As player *O*, you won 1, lost 4 (1 by timeout), and tied 1 game.
+     * Suppose you are barrybecker4 and playing O, then you should see the same thing.
+     *
+     * Suppose you are joeSchmoe and playing X, then you should see:
+     *   You have played *joeSchmoe* 20 times in the past.
+     *   As player *X*, you won 5 (1 by resignation, 2 by timeout), lost 5 (2 by resignation), and tied 5 games.
+     *   As player *O*, you won 1, lost 4 (1 by timeout), and tied 1 game.
+     * Suppose you are joeSchmoe and playing O, then you should see the same thing.
+     */
+    function formatHistory(user, players) {
+        var history = players.history;
+        var otherUser = (players.player1 == user) ? players.player2: players.player1;
+        if (history.totalEncounters == 0) {
+            return 'This is the first time you are playing against <b>' + otherUser + '</b>.';
+        }
+        var text = 'You have played <b>' + otherUser + '</b> ' + history.totalEncounters + ' times in the past.<br>';
+
+        text += (players.player1 == user) ?
+            formatWinLossResults(history.player1AsX, history.player2AsX, false) :
+            formatWinLossResults(history.player2AsX, history.player1AsX, true);
+        return text;
+
+    }
+
+    function formatWinLossResults(xStats, oStats, invert) {
+        return invert ?
+            formatResultLine('X', xStats.totalLosses, xStats.totalWins, xStats.totalTies, xStats.losses, xStats.wins)
+            + formatResultLine('O', oStats.totalLosses, oStats.totalWins, oStats.totalTies, oStats.losses, oStats.wins) :
+            formatResultLine('X', xStats.totalWins, xStats.totalLosses, xStats.totalTies, xStats.wins, xStats.losses)
+            + formatResultLine('O', oStats.totalWins, oStats.totalLosses, oStats.totalTies, oStats.wins, oStats.losses);
+    }
+
+    function formatResultLine(symbol, totalWins, totalLosses, ties, wins, losses) {
+        var winParen = getOptionalWinLossParen(wins);
+        var lossParen = getOptionalWinLossParen(losses);
+        return 'As player <b>' + symbol + '</b> you won ' + totalWins + winParen +
+               ', lost ' + totalLosses + lossParen + ', and tied ' + ties + '.<br>';
+    }
+
+    function getOptionalWinLossParen(winloss) {
+        var parenStr = '';
+        console.log("winloss = " + JSON.stringify(winloss));
+        if (winloss.byResignation + winloss.byTimeout) {
+            parenStr = ' (';
+            if (winloss.byResignation) {
+                parenStr += winloss.byResignation + ' by resignation';
+                if (winloss.byTimeout) {
+                    parenStr += ', ';
+                }
+            }
+            if (winloss.byTimeout) {
+                parenStr += winloss.byTimeout + ' by timeout';
+            }
+            parenStr += ')';
+        }
+        return parenStr;
+    }
+
+    return {
+        formatHistory: formatHistory,
+    };
+}
+</script>
