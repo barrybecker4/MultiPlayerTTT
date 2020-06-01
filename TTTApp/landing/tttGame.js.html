@@ -1,207 +1,247 @@
 <script>
-var moveTimer = null;
-
 /**
- * Dynamically create the TTT board. It will look like this:
- * <div class="row">
- *    <div id="cell0" class="cell" onclick="cellClicked(0)">
- *    <div id="cell1" class="cell" onclick="cellClicked(1)">
- *    <div id="cell2" class="cell" onclick="cellClicked(2)">
- * <div>
- * <div class="row">
- *    :
- * <div>
- * <div class="row">
- *    :
- * <div>
+ * The Tic-Tac-Toe game from the point of view of the player that is running in this browser
  */
-function initializeBoard() {
-    var boardDiv = getBoardDiv();
-    boardDiv.innerHTML = ''; // clear board
+function createTttGame(boardDiv, onGameEnded) {
 
-    for (var row = 0; row < 3; row++) {
-         var rowDiv = document.createElement("div");
-         rowDiv.className = "row";
-         for (var col = 0; col < 3; col++) {
-             var cellDiv = document.createElement("div");
-             var position = 3 * row + col;
-             cellDiv.className = 'cell';
-             cellDiv.id = 'cell' + position;
-             cellDiv.addEventListener("click", getCellClickedFunction(position));
-             cellDiv.textContent = ' ';
-             rowDiv.appendChild(cellDiv);
-         }
-         boardDiv.appendChild(rowDiv);
+    var thisPlayersMove = false;  // When true, the player is allowed to move.
+    var thisPlayersSymbol = null; // Will be either X or O when a game is ACTIVE
+    var thisGameId = null;        // unique ID of the current game (once it starts)
+    var moveTimer = null;         // used to count down the players time to move
+
+    function startGame(isPlayerX, gameId) {
+        thisPlayersSymbol = isPlayerX ? 'X' : 'O';
+        thisPlayersMove = isPlayerX;
+        thisGameId = gameId;
+
+        initializeBoard();
     }
 
-    if (thisPlayersSymbol == 'O') {
-        waitForOtherPlayerMove();
+    function endGame() {
+        thisPlayersMove = false;
+        thisPlayersSymbol = null;
+        if (onGameEnded) {
+            onGameEnded(thisGameId);
+        }
     }
-}
 
-function getCellClickedFunction(cellPos) {
-    return function(e) {
-        var currentContent = e.target.textContent;
-        if (thisPlayersMove) {
-            if (currentContent == ' ') {
-                e.target.textContent = thisPlayersSymbol;
-                console.log(thisPlayersSymbol + " clicked at " + cellPos);
-                makeThisPlayersMoveAt(cellPos);
+    /**
+     * Dynamically create the TTT board. It will look like this:
+     * <div class="row">
+     *    <div id="cell0" class="cell" onclick="cellClicked(0)">
+     *    <div id="cell1" class="cell" onclick="cellClicked(1)">
+     *    <div id="cell2" class="cell" onclick="cellClicked(2)">
+     * <div>
+     * <div class="row">
+     *    :
+     * <div>
+     * <div class="row">
+     *    :
+     * <div>
+     */
+    function initializeBoard() {
+        boardDiv.innerHTML = ''; // clear board
+
+        for (var row = 0; row < 3; row++) {
+             var rowDiv = document.createElement("div");
+             rowDiv.className = "row";
+             for (var col = 0; col < 3; col++) {
+                 var cellDiv = document.createElement("div");
+                 var position = 3 * row + col;
+                 cellDiv.className = 'cell';
+                 cellDiv.id = 'cell' + position;
+                 cellDiv.addEventListener("click", getCellClickedFunction(position));
+                 cellDiv.textContent = ' ';
+                 rowDiv.appendChild(cellDiv);
+             }
+             boardDiv.appendChild(rowDiv);
+        }
+
+        if (thisPlayersSymbol == 'O') {
+            waitForOtherPlayerMove();
+        }
+    }
+
+    function getCellClickedFunction(cellPos) {
+        return function(e) {
+            var currentContent = e.target.textContent;
+            if (thisPlayersMove) {
+                if (currentContent == ' ') {
+                    e.target.textContent = thisPlayersSymbol;
+                    console.log(thisPlayersSymbol + " clicked at " + cellPos);
+                    makeThisPlayersMoveAt(cellPos);
+                }
+                else {
+                    alert("You cannot play in an occupied square!");
+                }
+            }
+        }
+    }
+
+    /**
+     * Make a move for the current player at the specified position.
+     * Prevent this player from moving again until other player has moved.
+     */
+    function makeThisPlayersMoveAt(cellPos) {
+        clearInterval(moveTimer);
+        thisPlayersMove = false; // prevents more play
+
+        google.script.run
+            .withSuccessHandler(updateAndWaitForOtherPlayer)
+            .withFailureHandler(showError)
+            .doPlayerMove(thisGameId, thisPlayersSymbol, cellPos);
+    }
+
+    function playerQuitsPlaying() {
+        playerTerminates('_BY_RESIGN');
+    }
+
+    function playerTimesOut() {
+        playerTerminates('_BY_TIMEOUT');
+    }
+
+    function playerTerminates(statusSuffix) {
+        var otherPlayer = getOtherPlayer();
+        clearInterval(moveTimer);
+
+        google.script.run
+            .withFailureHandler(showError)
+            .doPlayerTerminates(thisGameId, thisPlayersSymbol, statusSuffix);
+
+        updateIfGameOver(otherPlayer + statusSuffix);
+    }
+
+    /**
+     * @param boardState contains status and winningPositions (if any)
+     */
+    function updateAndWaitForOtherPlayer(gameData) {
+        console.log("update board and wait for other");
+        redrawGameBoard(gameData);
+        if (thisPlayersSymbol && !thisPlayersMove) {
+            var otherPlayer = getOtherPlayer();
+            getDirections2El().textContent = "Waiting for " + otherPlayer + " to move...";
+            console.log("recursive call polling for other player to move... ");
+            // not sure why this does not always work on FireFox
+            setTimeout(waitForOtherPlayerMove, 1000);
+        }
+    }
+
+    function waitForOtherPlayerMove() {
+        google.script.run
+            .withSuccessHandler(updateAndWaitForOtherPlayer)
+            .withFailureHandler(showError)
+            .getCurrentGameBoard(thisGameId);
+    }
+
+    /**
+     * @param gameData is an object like this, where board is a string with 9 characters.
+     *     { boardId, status, board, nextPlayer }
+     */
+    function redrawGameBoard(gameData) {
+        // console.log("redrawing gameData = " + JSON.stringify(gameData) + "\nthisPlayersSymbol=" + thisPlayersSymbol);
+        drawBoard(gameData.boardData);
+
+        if (gameData.nextPlayer == thisPlayersSymbol && gameData.status == 'ACTIVE') {
+            thisPlayersMove = true;
+            getDirections2El().textContent = "Your move, " + thisPlayersSymbol;
+            moveTimer = initiateMoveTimer(10);
+        } else {
+            updateIfGameOver(gameData.status);
+        }
+    }
+
+    function drawBoard(board) {
+        for (var i = 0; i < board.length; i++) {
+            var cell = document.querySelector("#cell" + i);  // better to select within board div
+            var content = board.charAt(i);
+            cell.textContent = content == '_' ? ' ' : content;
+        }
+    }
+
+    /**
+     * If the player does not move before secondsRemaining reaches 0, then they lose on time
+     */
+    function initiateMoveTimer(secondsRemaining) {
+        console.log("timer initiated");
+        var timer = setInterval(decrementTime, 1000);
+        return timer;
+
+        function decrementTime() {
+            secondsRemaining -= 1;
+            // console.log("time remaining = " + secondsRemaining);
+            playTickSound();
+            getDirections2El().textContent = "Make your move in " + secondsRemaining + " seconds.";
+            if (secondsRemaining <= 0) {
+                getDirections2El().textContent = "You (" + thisPlayersSymbol + ") ran out of time!";
+                clearInterval(timer);
+                playerTimesOut();
+            }
+        }
+    }
+
+    function updateIfGameOver(status) {
+        if (status != 'ACTIVE') {
+            var directions = '';
+            if (status == 'TIE') {
+                directions = 'It was a tie!';
+            }
+            else if (status.indexOf('_WIN') >= 0) {
+                var winningPlayer = status.charAt(0);
+                directions = (winningPlayer == thisPlayersSymbol) ?
+                    "You won!!" :
+                    "Sorry you lose. " + winningPlayer + " won!";
+            }
+            else if (status.indexOf('_BY_RESIGN') >= 0 || status.indexOf('_BY_TIMEOUT') >= 0) {
+                var winningPlayer = status.charAt(0);
+                var losingPlayer = winningPlayer == 'X' ? 'O' : 'X';
+                if (status.indexOf('_BY_RESIGN') >= 0) {
+                    directions = (winningPlayer == thisPlayersSymbol) ?
+                        "You (" + winningPlayer + ") win because the other player resigned." :
+                        "You (" + losingPlayer + ") quit, so you lose!";
+                } else {
+                    directions = (winningPlayer == thisPlayersSymbol) ?
+                        "You (" + winningPlayer + ") win because the other player ran out of time." :
+                        "You (" + losingPlayer + ") lose! You ran out of time.";
+                }
             }
             else {
-                alert("You cannot play in an occupied square!");
+                throw new Error("Unexpected status = " + status);
             }
+            thisPlayersSymbol = null;
+            thisPlayersMove = false;
+            getDirections2El().textContent = directions;
+            endGame();
         }
     }
-}
 
-/**
- * Make a move for the current player at the specified position.
- * Prevent this player from moving again until other player has moved.
- */
-function makeThisPlayersMoveAt(cellPos) {
-    clearInterval(moveTimer);
-    thisPlayersMove = false; // prevents more play
-
-    google.script.run
-        .withSuccessHandler(updateAndWaitForOtherPlayer)
-        .withFailureHandler(showError)
-        .doPlayerMove(thisGameId, thisPlayersSymbol, cellPos);
-}
-
-function playerQuitsPlaying() {
-    playerTerminates('_BY_RESIGN');
-}
-
-function playerTimesOut() {
-    playerTerminates('_BY_TIMEOUT');
-}
-
-function playerTerminates(statusSuffix) {
-    var otherPlayer = getOtherPlayer();
-    clearInterval(moveTimer);
-
-    google.script.run
-        .withFailureHandler(showError)
-        .doPlayerTerminates(thisGameId, thisPlayersSymbol, statusSuffix);
-
-    updateIfGameOver(otherPlayer + statusSuffix);
-}
-
-/**
- * @param boardState contains status and winningPositions (if any)
- */
-function updateAndWaitForOtherPlayer(gameData) {
-    redrawGameBoard(gameData);
-    if (thisPlayersSymbol && !thisPlayersMove) {
-        var otherPlayer = getOtherPlayer();
-        getDirections2El().textContent = "Waiting for " + otherPlayer + " to move...";
-        console.log("recursive call polling for other player to move... ");
-        // not sure why this does not always work on FireFox
-        setTimeout(waitForOtherPlayerMove, 1000);
+    function getOtherPlayer() {
+        return thisPlayersSymbol == 'X' ? 'O' : 'X';
     }
-}
 
-function waitForOtherPlayerMove() {
-    google.script.run
-        .withSuccessHandler(updateAndWaitForOtherPlayer)
-        .withFailureHandler(showError)
-        .getCurrentGameBoard(thisGameId);
-}
-
-/**
- * @param gameData is an object like this, where board is a string with 9 characters.
- *     { boardId, status, board, nextPlayer }
- */
-function redrawGameBoard(gameData) {
-    console.log("redrawing gameData = " + JSON.stringify(gameData) + "\nthisPlayersSymbol=" + thisPlayersSymbol);
-    drawBoard(gameData.boardData);
-
-    if (gameData.nextPlayer == thisPlayersSymbol && gameData.status == 'ACTIVE') {
-        thisPlayersMove = true;
-        getDirections2El().textContent = "Your move, " + thisPlayersSymbol;
-        moveTimer = initiateMoveTimer(10);
-    } else {
-        updateIfGameOver(gameData.status);
+    function getPlayersSymbol() {
+        return thisPlayersSymbol;
     }
-}
 
-function drawBoard(board) {
-    var boardDiv = getBoardDiv();
-    for (var i = 0; i < board.length; i++) {
-        var cell = document.querySelector("#cell" + i);
-        var content = board.charAt(i);
-        cell.textContent = content == '_' ? ' ' : content;
+    function setGameId(gameId) {
+        thisGameId = gameId;
     }
-}
 
-/**
- * If the player does not move before secondsRemaining reaches 0, then they lose on time
- */
-function initiateMoveTimer(secondsRemaining) {
-    console.log("timer initiated");
-    var timer = setInterval(decrementTime, 1000);
-    return timer;
-
-    function decrementTime() {
-        secondsRemaining -= 1;
-        console.log("time remaining = " + secondsRemaining);
-        playTickSound();
-        getDirections2El().textContent = "Make your move in " + secondsRemaining + " seconds.";
-        if (secondsRemaining <= 0) {
-            getDirections2El().textContent = "You (" + thisPlayersSymbol + ") ran out of time!";
-            clearInterval(timer);
-            playerTimesOut();
-        }
+    function getGameId() {
+        return thisGameId;
     }
-}
 
-function updateIfGameOver(status) {
-    if (status != 'ACTIVE') {
-        var directions = '';
-        if (status == 'TIE') {
-            directions = 'It was a tie!';
-        }
-        else if (status.indexOf('_WIN') >= 0) {
-            var winningPlayer = status.charAt(0);
-            directions = (winningPlayer == thisPlayersSymbol) ?
-                "You won!!" :
-                "Sorry you lose. " + winningPlayer + " won!";
-        }
-        else if (status.indexOf('_BY_RESIGN') >= 0 || status.indexOf('_BY_TIMEOUT') >= 0) {
-            var winningPlayer = status.charAt(0);
-            var losingPlayer = winningPlayer == 'X' ? 'O' : 'X';
-            if (status.indexOf('_BY_RESIGN') >= 0) {
-                directions = (winningPlayer == thisPlayersSymbol) ?
-                    "You (" + winningPlayer + ") win because the other player resigned." :
-                    "You (" + losingPlayer + ") quit, so you lose!";
-            } else {
-                directions = (winningPlayer == thisPlayersSymbol) ?
-                    "You (" + winningPlayer + ") win because the other player ran out of time." :
-                    "You (" + losingPlayer + ") lose! You ran out of time.";
-            }
-        }
-        else {
-            throw new Error("Unexpected status = " + status);
-        }
-        thisPlayersSymbol = null;
-        thisPlayersMove = false;
-        getDirections2El().textContent = directions;
-        endGame(thisGameId);
+    function playTickSound() {
+      var sound = document.getElementById("audio-tick");
+      sound.play();
     }
-}
 
-function getOtherPlayer() {
-    return thisPlayersSymbol == 'X' ? 'O' : 'X';
+    return {
+        startGame: startGame,
+        endGame: endGame,
+        playerQuitsPlaying: playerQuitsPlaying,
+        getPlayersSymbol: getPlayersSymbol,
+        setGameId: setGameId,
+        getGameId: getGameId,
+    };
 }
-
-function getBoardDiv() {
-    return document.querySelector("#board");
-}
-
-function playTickSound() {
-  var sound = document.getElementById("audio-tick");
-  sound.play();
-}
-
 </script>

@@ -1,6 +1,6 @@
 <script>
+
 var historyFormatter = getHistoryFormatter();
-console.log("historyFormatter = " + historyFormatter);
 
 function getHistoryFormatter() {
 
@@ -49,7 +49,6 @@ function getHistoryFormatter() {
 
     function getOptionalWinLossParen(winloss) {
         var parenStr = '';
-        console.log("winloss = " + JSON.stringify(winloss));
         if (winloss.byResignation + winloss.byTimeout) {
             parenStr = ' (';
             if (winloss.byResignation) {
