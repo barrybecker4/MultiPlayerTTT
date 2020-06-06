@@ -2,17 +2,38 @@
 /**
  * The Tic-Tac-Toe game from the point of view of the player that is running in this browser
  */
-function createTttGame(boardDiv, onGameEnded) {
+function createTttGame(user, gameDiv, onGameEnded) {
 
     var thisPlayersMove = false;  // When true, the player is allowed to move.
     var thisPlayersSymbol = null; // Will be either X or O when a game is ACTIVE
     var thisGameId = null;        // unique ID of the current game (once it starts)
     var moveTimer = null;         // used to count down the players time to move
 
-    function startGame(isPlayerX, gameId) {
+    // elements we will use globally
+    var directions1 = getOrCreate('directions1', 'text');
+    var directions2 = getOrCreate('directions2', 'text');
+    directions1.textContent = 'Click play to start a game.';
+    var boardDiv = getOrCreate('board', 'table');
+    var historyEl = getOrCreate('history', 'text');
+
+    var historyFormatter = getHistoryFormatter();
+    if (!onGameEnded) {
+        throw new Error('You must supply an onGameEnded callback');
+    }
+
+    function startGame(players) {
+        var isPlayerX = players.player1 == user;
+        var directions = isPlayerX ?
+        "Found player for you to play. You will be playing X against <b>" + players.player2 + "</b>." :
+        "You will be playing O against <b>" + players.player1 + "</b>.";
+
+        directions1.innerHTML = directions;
+        directions2.innerHTML = '';
+        showHistory(players);
+
         thisPlayersSymbol = isPlayerX ? 'X' : 'O';
         thisPlayersMove = isPlayerX;
-        thisGameId = gameId;
+        thisGameId = players.gameId;
 
         initializeBoard();
     }
@@ -20,9 +41,8 @@ function createTttGame(boardDiv, onGameEnded) {
     function endGame() {
         thisPlayersMove = false;
         thisPlayersSymbol = null;
-        if (onGameEnded) {
-            onGameEnded(thisGameId);
-        }
+        directions1.textContent = '';
+        onGameEnded(thisGameId);
     }
 
     /**
@@ -119,7 +139,7 @@ function createTttGame(boardDiv, onGameEnded) {
         redrawGameBoard(gameData);
         if (thisPlayersSymbol && !thisPlayersMove) {
             var otherPlayer = getOtherPlayer();
-            getDirections2El().textContent = "Waiting for " + otherPlayer + " to move...";
+            directions2.textContent = "Waiting for " + otherPlayer + " to move...";
             console.log("recursive call polling for other player to move... ");
             // not sure why this does not always work on FireFox
             setTimeout(waitForOtherPlayerMove, 1000);
@@ -143,7 +163,7 @@ function createTttGame(boardDiv, onGameEnded) {
 
         if (gameData.nextPlayer == thisPlayersSymbol && gameData.status == 'ACTIVE') {
             thisPlayersMove = true;
-            getDirections2El().textContent = "Your move, " + thisPlayersSymbol;
+            directions2.textContent = "Your move, " + thisPlayersSymbol;
             moveTimer = initiateMoveTimer(10);
         } else {
             updateIfGameOver(gameData.status);
@@ -170,9 +190,9 @@ function createTttGame(boardDiv, onGameEnded) {
             secondsRemaining -= 1;
             // console.log("time remaining = " + secondsRemaining);
             playTickSound();
-            getDirections2El().textContent = "Make your move in " + secondsRemaining + " seconds.";
+            directions2.textContent = "Make your move in " + secondsRemaining + " seconds.";
             if (secondsRemaining <= 0) {
-                getDirections2El().textContent = "You (" + thisPlayersSymbol + ") ran out of time!";
+                directions2.textContent = "You (" + thisPlayersSymbol + ") ran out of time!";
                 clearInterval(timer);
                 playerTimesOut();
             }
@@ -209,7 +229,7 @@ function createTttGame(boardDiv, onGameEnded) {
             }
             thisPlayersSymbol = null;
             thisPlayersMove = false;
-            getDirections2El().textContent = directions;
+            directions2.textContent = directions;
             endGame();
         }
     }
@@ -226,8 +246,45 @@ function createTttGame(boardDiv, onGameEnded) {
         thisGameId = gameId;
     }
 
-    function getGameId() {
-        return thisGameId;
+    function enterGame() {
+        directions1.textContent = 'Waiting for opponent...';
+        google.script.run
+            .withSuccessHandler(waitForOpponent)
+            .withFailureHandler(showError)
+            .newPlayerEnters();
+    }
+
+    /**
+     * Either the other player has not yet entered, or we are the second player and should start game immediately.
+     */
+    function waitForOpponent(players) {
+        console.log("waitingForOpp players = " + JSON.stringify(players));
+        thisGameId = players.gameId;
+        if (players.player2) {
+            startGame(players);
+        }
+        else {
+            google.script.run
+                .withSuccessHandler(waitForOpponent)
+                .withFailureHandler(showError)
+                .checkForOpponent(players.gameId);
+        }
+    }
+
+    function playerQuits() {
+        if (thisPlayersSymbol) {
+            playerQuitsPlaying();
+        } else {
+            quitBeforeStart();
+            onGameEnded(thisGameId);
+        }
+    }
+
+    function quitBeforeStart() {
+        directions1.textContent = 'You quit before the game even started!';
+        google.script.run
+          .withFailureHandler(showError)
+          .playerLeaves(thisGameId);
     }
 
     function playTickSound() {
@@ -235,13 +292,24 @@ function createTttGame(boardDiv, onGameEnded) {
       sound.play();
     }
 
+    function showHistory(players) {
+        historyEl.innerHTML = historyFormatter.formatHistory(user, players);
+    }
+
+    function getOrCreate(divId, classes) {
+        var el = gameDiv.querySelector('#' + divId);
+        if (!el) {
+            el = document.createElement('div');
+            el.id = divId;
+            el.className = classes;
+            gameDiv.appendChild(el);
+        }
+        return el;
+    }
+
     return {
-        startGame: startGame,
-        endGame: endGame,
-        playerQuitsPlaying: playerQuitsPlaying,
-        getPlayersSymbol: getPlayersSymbol,
-        setGameId: setGameId,
-        getGameId: getGameId,
+        enterGame: enterGame,
+        playerQuits: playerQuits,
     };
 }
 </script>

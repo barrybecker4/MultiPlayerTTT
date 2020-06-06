@@ -1,6 +1,7 @@
 <script>
 
-var tttGame = createTttGame(document.querySelector("#board"), onGameEnded);
+var user = document.querySelector("#userid").textContent;
+var tttGame = createTttGame(user, document.querySelector("#game-div"), onGameEnded);
 
 /**
  * Run initializations on page load.
@@ -23,34 +24,13 @@ function initializeButtons() {
 
 function onPlayClicked() {
     playButtonSound();
-    enterGame();
+    tttGame.enterGame();
+    toggleButtons();
 }
 
 function onQuitClicked() {
     playButtonSound();
-    playerQuits();
-}
-
-function enterGame() {
-    getDirections1El().textContent = 'Waiting for opponent...';
-    google.script.run
-        .withSuccessHandler(waitForOpponent)
-        .withFailureHandler(showError)
-        .newPlayerEnters();
-
-    toggleButtons();
-}
-
-function playerQuits() {
-    if (tttGame.getPlayersSymbol()) {
-        playerQuitsPlaying();
-    } else {
-        getDirections1El().textContent = 'You quit before the game even started!';
-        google.script.run
-          .withFailureHandler(showError)
-          .playerLeaves(tttGame.getGameId());
-        toggleButtons();
-    }
+    tttGame.playerQuits();
 }
 
 function toggleButtons() {
@@ -63,55 +43,6 @@ function toggleButtons() {
 
 function onGameEnded(gameId) {
     toggleButtons();
-    getDirections1El().textContent = '';
-}
-
-/**
- * Either the other player has not yet entered, or we are the second player and should start game immediately.
- */
-function waitForOpponent(players) {
-    console.log("waitingForOpp players = " + JSON.stringify(players));
-    tttGame.setGameId(players.gameId);
-    if (players.player2) {
-        gameStarted(players);
-    }
-    else {
-        google.script.run
-            .withSuccessHandler(waitForOpponent)
-            .withFailureHandler(showError)
-            .checkForOpponent(players.gameId);
-    }
-}
-
-function gameStarted(players) {
-    var user = document.querySelector("#userid").textContent;
-    var isPlayerX = players.player1 == user;
-
-    var directions = isPlayerX ?
-    "Found player for you to play. You will be playing X against <b>" + players.player2 + "</b>." :
-    "You will be playing O against <b>" + players.player1 + "</b>.";
-
-    getDirections1El().innerHTML = directions;
-    getDirections2El().innerHTML = '';
-    showHistory(user, players);
-
-    tttGame.startGame(isPlayerX, players.gameId);
-}
-
-function showHistory(user, players) {
-    getHistoryEl().innerHTML = historyFormatter.formatHistory(user, players);
-}
-
-function getDirections1El() {
-    return document.querySelector("#directions1");
-}
-
-function getDirections2El() {
-    return document.querySelector("#directions2");
-}
-
-function getHistoryEl() {
-    return document.querySelector('#history');
 }
 
 function getPlayButton() {

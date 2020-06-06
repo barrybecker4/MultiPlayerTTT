@@ -18,28 +18,24 @@
 
     <div id="title" class="title">Online Tic-Tac-Toe</div>
     <div id="instructions" class="text">
-        Play Tic-Tac-Toe with other people online. Click play to start.
+        Play Tic-Tac-Toe with other people online.
         If someone else is online and looking for a game you will automatically be matched with them.
         You need to make moves withing 10 seconds or forfeit.
     </div>
 
-    <div id="main-div">
+    <div id="game-div">
         <div>
             <button id="play" class="text" title="Click to start a game">Play</button>
             <button id="quit" class="text" title="Click to quit playing (in other words, resign)">Quit</button>
         </div>
-        <div id="directions1" class="text">Click play to start a game.</div>
-        <div id="directions2" class="text"></div>
     </div>
-    <div id="board" class="table"></div>
-
-    <div id="history" class="text"></div>
 
 </body>
 </html>
 
 <!-- put the javascript includes last so that the page loads first and faster -->
 <?!= include('common.js'); ?>
+<?!= include('landing/historyFormatter.js'); ?>
 <?!= include('landing/tttGame.js'); ?>
 <?!= include('landing/LandingPage.js'); ?>
-<?!= include('landing/historyFormatter.js'); ?>
+
