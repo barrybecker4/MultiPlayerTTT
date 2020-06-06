@@ -46,7 +46,7 @@ function newPlayerEnters() {
 
 function checkForOpponent(gameId) {
     var doc = gamesTable.getGameById(gameId);
-    var players = getPlayersFromRow([doc]);
+    var players = doc ? getPlayersFromRow([doc]) : null;
     if (players && players.player2) {
        addHistory(players);
     }

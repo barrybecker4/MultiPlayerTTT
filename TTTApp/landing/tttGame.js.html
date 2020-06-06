@@ -8,15 +8,8 @@ function createTttGame(user, gameDiv, onGameEnded) {
     var thisPlayersSymbol = null; // Will be either X or O when a game is ACTIVE
     var thisGameId = null;        // unique ID of the current game (once it starts)
     var moveTimer = null;         // used to count down the players time to move
+    var gameElements = createGameElements(gameDiv);
 
-    // elements we will use globally
-    var directions1 = getOrCreate('directions1', 'text');
-    var directions2 = getOrCreate('directions2', 'text');
-    directions1.textContent = 'Click play to start a game.';
-    var boardDiv = getOrCreate('board', 'table');
-    var historyEl = getOrCreate('history', 'text');
-
-    var historyFormatter = getHistoryFormatter();
     if (!onGameEnded) {
         throw new Error('You must supply an onGameEnded callback');
     }
@@ -27,9 +20,9 @@ function createTttGame(user, gameDiv, onGameEnded) {
         "Found player for you to play. You will be playing X against <b>" + players.player2 + "</b>." :
         "You will be playing O against <b>" + players.player1 + "</b>.";
 
-        directions1.innerHTML = directions;
-        directions2.innerHTML = '';
-        showHistory(players);
+        gameElements.setDirections1(directions);
+        gameElements.setDirections2('');
+        gameElements.showHistory(user, players);
 
         thisPlayersSymbol = isPlayerX ? 'X' : 'O';
         thisPlayersMove = isPlayerX;
@@ -41,8 +34,8 @@ function createTttGame(user, gameDiv, onGameEnded) {
     function endGame() {
         thisPlayersMove = false;
         thisPlayersSymbol = null;
-        directions1.textContent = '';
-        onGameEnded(thisGameId);
+        gameElements.setDirections1('');
+        onGameEnded();
     }
 
     /**
@@ -60,6 +53,7 @@ function createTttGame(user, gameDiv, onGameEnded) {
      * <div>
      */
     function initializeBoard() {
+        var boardDiv = gameElements.getBoardDiv();
         boardDiv.innerHTML = ''; // clear board
 
         for (var row = 0; row < 3; row++) {
@@ -139,7 +133,7 @@ function createTttGame(user, gameDiv, onGameEnded) {
         redrawGameBoard(gameData);
         if (thisPlayersSymbol && !thisPlayersMove) {
             var otherPlayer = getOtherPlayer();
-            directions2.textContent = "Waiting for " + otherPlayer + " to move...";
+            gameElements.setDirections2("Waiting for " + otherPlayer + " to move...");
             console.log("recursive call polling for other player to move... ");
             // not sure why this does not always work on FireFox
             setTimeout(waitForOtherPlayerMove, 1000);
@@ -163,7 +157,7 @@ function createTttGame(user, gameDiv, onGameEnded) {
 
         if (gameData.nextPlayer == thisPlayersSymbol && gameData.status == 'ACTIVE') {
             thisPlayersMove = true;
-            directions2.textContent = "Your move, " + thisPlayersSymbol;
+            gameElements.setDirections2("Your move, " + thisPlayersSymbol);
             moveTimer = initiateMoveTimer(10);
         } else {
             updateIfGameOver(gameData.status);
@@ -190,9 +184,9 @@ function createTttGame(user, gameDiv, onGameEnded) {
             secondsRemaining -= 1;
             // console.log("time remaining = " + secondsRemaining);
             playTickSound();
-            directions2.textContent = "Make your move in " + secondsRemaining + " seconds.";
+            gameElements.setDirections2("Make your move in " + secondsRemaining + " seconds.");
             if (secondsRemaining <= 0) {
-                directions2.textContent = "You (" + thisPlayersSymbol + ") ran out of time!";
+                gameElements.setDirections2("You (" + thisPlayersSymbol + ") ran out of time!");
                 clearInterval(timer);
                 playerTimesOut();
             }
@@ -229,7 +223,7 @@ function createTttGame(user, gameDiv, onGameEnded) {
             }
             thisPlayersSymbol = null;
             thisPlayersMove = false;
-            directions2.textContent = directions;
+            gameElements.setDirections2(directions);
             endGame();
         }
     }
@@ -247,7 +241,7 @@ function createTttGame(user, gameDiv, onGameEnded) {
     }
 
     function enterGame() {
-        directions1.textContent = 'Waiting for opponent...';
+        gameElements.setDirections1('Waiting for opponent...');
         google.script.run
             .withSuccessHandler(waitForOpponent)
             .withFailureHandler(showError)
@@ -259,15 +253,17 @@ function createTttGame(user, gameDiv, onGameEnded) {
      */
     function waitForOpponent(players) {
         console.log("waitingForOpp players = " + JSON.stringify(players));
-        thisGameId = players.gameId;
-        if (players.player2) {
-            startGame(players);
-        }
-        else {
-            google.script.run
-                .withSuccessHandler(waitForOpponent)
-                .withFailureHandler(showError)
-                .checkForOpponent(players.gameId);
+        if (players) {
+            thisGameId = players.gameId;
+            if (players.player2) {
+                startGame(players);
+            }
+            else {
+                google.script.run
+                    .withSuccessHandler(waitForOpponent)
+                    .withFailureHandler(showError)
+                    .checkForOpponent(players.gameId);
+            }
         }
     }
 
@@ -276,12 +272,12 @@ function createTttGame(user, gameDiv, onGameEnded) {
             playerQuitsPlaying();
         } else {
             quitBeforeStart();
-            onGameEnded(thisGameId);
+            onGameEnded();
         }
     }
 
     function quitBeforeStart() {
-        directions1.textContent = 'You quit before the game even started!';
+        gameElements.setDirections1('You quit before the game even started!');
         google.script.run
           .withFailureHandler(showError)
           .playerLeaves(thisGameId);
@@ -290,21 +286,6 @@ function createTttGame(user, gameDiv, onGameEnded) {
     function playTickSound() {
       var sound = document.getElementById("audio-tick");
       sound.play();
-    }
-
-    function showHistory(players) {
-        historyEl.innerHTML = historyFormatter.formatHistory(user, players);
-    }
-
-    function getOrCreate(divId, classes) {
-        var el = gameDiv.querySelector('#' + divId);
-        if (!el) {
-            el = document.createElement('div');
-            el.id = divId;
-            el.className = classes;
-            gameDiv.appendChild(el);
-        }
-        return el;
     }
 
     return {

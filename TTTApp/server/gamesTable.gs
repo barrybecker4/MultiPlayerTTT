@@ -14,7 +14,14 @@ function getGamesTableAccessor() {
     }
 
     function getGameById(gameId) {
-        return firestore.getDocument(GAMES_TABLE + '/' + gameId);
+        var doc = null;
+        try {
+            doc = firestore.getDocument(GAMES_TABLE + '/' + gameId);
+        }
+        catch (err) {
+            // intentionally do nothing. If here, then the doc was deleted.
+        }
+        return doc;
     }
 
     /**

@@ -1,0 +1,49 @@
+<script>
+/**
+ * html elements within the gameDiv that will be used to display the game in html.
+ */
+function createGameElements(gameDiv) {
+
+    var directions1 = getOrCreate('directions1', 'text');
+    var directions2 = getOrCreate('directions2', 'text');
+    directions1.textContent = 'Click play to start a game.';
+    var boardDiv = getOrCreate('board', 'table');
+    var historyEl = getOrCreate('history', 'text');
+
+    var historyFormatter = getHistoryFormatter();
+
+    function getBoardDiv() {
+        return boardDiv;
+    }
+
+    function setDirections1(content) {
+        directions1.innerHTML = content;
+    }
+
+    function setDirections2(content) {
+        directions2.innerHTML = content;
+    }
+
+    function showHistory(user, players) {
+        historyEl.innerHTML = historyFormatter.formatHistory(user, players);
+    }
+
+    function getOrCreate(divId, classes) {
+        var el = gameDiv.querySelector('#' + divId);
+        if (!el) {
+            el = document.createElement('div');
+            el.id = divId;
+            el.className = classes;
+            gameDiv.appendChild(el);
+        }
+        return el;
+    }
+
+    return {
+        getBoardDiv: getBoardDiv,
+        setDirections1: setDirections1,
+        setDirections2: setDirections2,
+        showHistory: showHistory,
+    };
+}
+</script>
