@@ -20,6 +20,8 @@ function initializeButtons() {
     const quitButton = getQuitButton();
     quitButton.disabled = true;
     quitButton.addEventListener("click", onQuitClicked);
+
+    getSendButton().addEventListener("click", onSendClicked);
 }
 
 function onPlayClicked() {
@@ -31,6 +33,21 @@ function onPlayClicked() {
 function onQuitClicked() {
     playButtonSound();
     tttGame.playerQuits();
+}
+
+function onSendClicked() {
+    playButtonSound();
+
+    let someObj = new AiPersonality(0.7, ["A", "B"]);
+
+    google.script.run
+        .withSuccessHandler(receiveServerObject)
+        .withFailureHandler(showError)
+        .sendObjectTest(someObj);
+}
+
+function receiveServerObject(obj) {
+    alert("Received: " + JSON.stringify(obj));
 }
 
 function toggleButtons() {
@@ -47,6 +64,10 @@ function onGameEnded() {
 
 function getPlayButton() {
     return document.querySelector("#play");
+}
+
+function getSendButton() {
+    return document.querySelector("#send");
 }
 
 function getQuitButton() {

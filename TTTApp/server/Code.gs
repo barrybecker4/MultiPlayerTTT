@@ -37,3 +37,10 @@ function getUserId() {
   return email.substring(0, email.indexOf("@"));
 }
 
+function sendObjectTest(someObj) {
+    //const pref = someObj.getSoldierEagerness();
+    const serverObj = new Personality("BarryP", 0.3, ["Foo"]);
+    //const serverObj = { a: "B", b: "from server", email: getUserEmail() };
+    return { received: someObj, sent: serverObj };
+}
+
