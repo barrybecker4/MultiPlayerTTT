@@ -37,3 +37,18 @@ function getUserId() {
   return email.substring(0, email.indexOf("@"));
 }
 
+/**
+ * ! This is no longer supported by GAS unfortunately !
+ * Given an array of .gs file names, get the source and return them concatenated for insertion into htmlservice.
+ * Allows sharing the same code between client and server side.
+ * In client html do:
+ *  <?!= requireGs (&#91;'usefulThings' , 'clientJs'&#93;); ?>
+ * @param {string[]} scripts the names of all the scripts needed
+ * @return {string} the code inside script tags
+ *
+function requireGs(scripts) {
+    return '<script>\n' + scripts.map (function (d) {
+        return ScriptApp.getResource(d).getDataAsString();
+    })
+    .join('\n\n') + '</script>\n';
+}*/

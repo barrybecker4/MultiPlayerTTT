@@ -24,6 +24,7 @@ function initializeButtons() {
 
 function onPlayClicked() {
     playButtonSound();
+    alert("rand = " + utils.rint(0, 10000)); ////
     tttGame.enterGame();
     toggleButtons();
 }
@@ -36,7 +37,7 @@ function onQuitClicked() {
 function toggleButtons() {
     var playButton = getPlayButton();
     var quitButton = getQuitButton();
-    // console.log("togging buttons. quit disabled = " + quitButton.disabled);
+    //console.log("toggling buttons. quit disabled = " + quitButton.disabled);
     playButton.disabled = !playButton.disabled;
     quitButton.disabled = !quitButton.disabled;
 }

@@ -8,6 +8,7 @@
 function doPlayerMove(gameId, playersSymbol, cellPos) {
     var doc = gamesTable.getGameById(gameId);
     var game = doc.fields;
+    const r = utils.rint(2, 100);
 
     var state = determineNewBoardState(playersSymbol, cellPos, game.board);
 
@@ -52,6 +53,7 @@ function getCurrentGameBoard(gameId) {
 /** for testing only */
 function unitTests() {
     var state = null;
+    const r = utils.rint(2, 100)
     state = determineNewBoardState('X', 0, '_O_XXXO_O');
     //Logger.log(JSON.stringify(state));  // X_WIN
     state = determineNewBoardState('O', 1, 'X_OXOXOOO');
